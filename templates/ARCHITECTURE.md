@@ -176,6 +176,32 @@ sequenceDiagram
 
 ---
 
+## Threat model reference
+
+Link to the project's threat model:
+
+- `THREAT_MODEL.md` (project-local, derived from `templates/THREAT_MODEL.md`)
+
+Required for any project handling Personal, Financial, Health, or Secret data.
+
+---
+
+## Cost reference
+
+Link to the project's cost estimate:
+
+- `COST_ESTIMATE.md` (project-local, derived from `templates/COST_ESTIMATE.md`)
+
+Reviewed at Gate D.
+
+---
+
+## Observability reference
+
+Apply `standards/observability-standards.md` unless an ADR overrides a specific default. Document any override in this file.
+
+---
+
 ## Alternatives considered
 
 | Option | Why not chosen |

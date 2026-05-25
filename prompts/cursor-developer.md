@@ -89,3 +89,17 @@ A feature is done only when:
 - The app can run locally.
 - Documentation is updated.
 - Known limitations are disclosed.
+
+---
+
+# 14. Developer Sign-off at Gate D
+
+At release readiness (Gate D in `OPERATING_MODEL.md`), the developer signs off when:
+
+- Every acceptance criterion in the Cursor handoff is met.
+- Every test in the test plan passes locally and in CI.
+- No secrets are present in the code, the `.env.example`, or the built bundle.
+- The README and `RUNBOOK.md` are up to date for the current implementation.
+- Any architecture deviations have been raised via the escalation protocol and have an ADR or response trail.
+
+The developer's sign-off is one of four required at Gate D. See `docs/adr/0006-three-agent-signoff.md`.

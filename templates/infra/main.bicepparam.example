@@ -1,0 +1,14 @@
+// AI App Factory — Bicep parameter file example
+//
+// Copy to `main.bicepparam` (or generate per-environment files) and fill in.
+// Deploy with:
+//   az deployment group create \
+//     --resource-group <rg-name> \
+//     --template-file main.bicep \
+//     --parameters main.bicepparam
+
+using './main.bicep'
+
+param appName = 'myapp'
+param env = 'dev'
+param allowedOrigin = 'http://localhost:3000'

@@ -13,6 +13,12 @@ The goal is not just to generate code. The goal is to create a disciplined proce
 
 ---
 
+## Scope
+
+The factory targets **greenfield projects only**. Brownfield migration is out of scope. See `docs/adr/0005-greenfield-only-scope.md`.
+
+---
+
 ## What this factory is for
 
 This repository focuses on web development projects such as:

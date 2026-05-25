@@ -15,9 +15,30 @@
 
 ---
 
+## Threat model
+
+Every project that handles Personal, Financial, Health, or Secret data must ship a threat model. Use `templates/THREAT_MODEL.md`. The marketing-site example skips a formal threat model because it stores only contact-form submissions (Personal, low blast radius); Stripe and Plaid projects ship one (see `examples/sample-stripe-threat-model.md`).
+
+The threat model is reviewed at Gate D as part of the architect's sign-off.
+
+---
+
 ## Security summary
 
 Describe the main security posture and what must be protected.
+
+---
+
+## Data classification scheme
+
+Use these labels when populating the Sensitive data table below and the data-classification section of `PROJECT.md`:
+
+- **Public** — intended for the open web. No protection needed beyond integrity.
+- **Internal** — operational data. Not catastrophic to leak, but should not be public.
+- **Personal** — PII; identifies a person directly or indirectly. Includes email addresses, names, IP addresses tied to users.
+- **Financial** — payment metadata, bank-account ids, transaction history. Card data itself is owned by Stripe and never enters the system.
+- **Health** — protected health information; triggers HIPAA-style handling. Not in scope for v1 of any factory blueprint.
+- **Secret** — credentials, API keys, webhook secrets, access tokens. Never logged, never returned to the client, never stored unencrypted.
 
 ---
 

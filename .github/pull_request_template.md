@@ -58,3 +58,14 @@ Rollback plan:
 ## Follow-up Tasks
 
 - None / list follow-ups
+
+## Four-party sign-off (Gate D — release candidates only)
+
+Required only for PRs that mark a release candidate. Skip for incremental work.
+
+- [ ] **Architect (Claude)** — implementation matches approved architecture; deviations are documented as ADRs.
+- [ ] **Developer (Cursor)** — acceptance criteria met; tests pass; no hard-coded secrets; README and RUNBOOK current.
+- [ ] **Quality Engineer (Codex)** — test plan executed; critical journeys pass; security and accessibility smoke checks pass; release readiness is Ready or Ready with documented risks.
+- [ ] **Product owner / technical owner** — business intent satisfied; risks accepted; release authorized.
+
+See `docs/adr/0006-three-agent-signoff.md`.

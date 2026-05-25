@@ -87,6 +87,18 @@ What business outcome should this project create?
 
 ---
 
+## Data classification
+
+Classify each data type the project handles. Anything not on this list must never be stored.
+
+| Data type | Classification | Stored where | Retention | Notes |
+|---|---|---|---|---|
+| `TODO` | Public / Internal / Personal / Financial / Health / Secret | `TODO` | `TODO` | `TODO` |
+
+Reference: `templates/SECURITY.md` and any project-specific `THREAT_MODEL.md`.
+
+---
+
 ## Assumptions
 
 - `TODO`

@@ -97,3 +97,18 @@ Use one of:
 - **Ready** — release can proceed.
 - **Ready with known risks** — release can proceed if risks are accepted.
 - **Not ready** — release should not proceed until blockers are resolved.
+
+---
+
+# 14. Quality Engineer Sign-off at Gate D
+
+At release readiness (Gate D in `OPERATING_MODEL.md`), the quality engineer signs off when:
+
+- The test plan has been executed and the results recorded.
+- Every business-critical user journey passes end-to-end.
+- Security smoke checks, including secret scans and webhook signature verification, pass.
+- Accessibility baseline checks pass.
+- Observability defaults from `standards/observability-standards.md` are wired and producing useful signal.
+- The release readiness decision is "Ready" or "Ready with documented risks." Documented risks are linked from this sign-off.
+
+The QE sign-off is one of four required at Gate D. See `docs/adr/0006-three-agent-signoff.md`.

@@ -7,7 +7,7 @@ This repository contains a starter operating system for an AI-assisted app deliv
 | File | Purpose |
 |---|---|
 | `README.md` | Start here. Explains the repo purpose and workflow. |
-| `OPERATING_MODEL.md` | Full AI App Factory operating model. |
+| `OPERATING_MODEL.md` | Full AI App Factory operating model and quality gates. |
 | `MANIFEST.md` | Inventory of files and how to use them. |
 | `CONTRIBUTING.md` | How to add or change factory artifacts without breaking the operating model. |
 | `CLAUDE.md` | Repository-level instruction file for Claude as Software Architect / Solution Designer. |
@@ -22,7 +22,7 @@ This repository contains a starter operating system for an AI-assisted app deliv
 | File | Purpose |
 |---|---|
 | `.github/workflows/ci.yml` | Starter CI workflow that validates markdown quality and required factory files. |
-| `.github/pull_request_template.md` | PR checklist template aligned with quality and release gates. |
+| `.github/pull_request_template.md` | PR checklist template including the four-party Gate D sign-off. |
 | `scripts/validate-factory.mjs` | Dependency-free validation script for required artifacts, manifest references, backtick path resolution, placeholder safety, and env-var cross-consistency. |
 
 ## AI Instruction Files
@@ -60,14 +60,25 @@ Portable copy-paste mirrors of the canonical instruction files above. Keep both 
 
 | File | Purpose |
 |---|---|
-| `templates/PROJECT.md` | Project brief template. |
-| `templates/ARCHITECTURE.md` | Architecture package template. |
+| `templates/PROJECT.md` | Project brief template (includes data classification table). |
+| `templates/ARCHITECTURE.md` | Architecture package template (cross-references threat model, cost, observability). |
 | `templates/API_SPEC.md` | API contract template for API/webhook projects. |
-| `templates/SECURITY.md` | Security model template. |
+| `templates/SECURITY.md` | Security model template (includes data classification scheme). |
+| `templates/THREAT_MODEL.md` | STRIDE-based threat model template. |
+| `templates/COST_ESTIMATE.md` | Monthly cost worksheet. |
 | `templates/TEST_PLAN.md` | Test strategy and test plan template. |
 | `templates/RELEASE_CHECKLIST.md` | Release readiness checklist template. |
 | `templates/RUNBOOK.md` | Operational runbook template. |
+| `templates/ADR.md` | Architecture decision record template. |
 | `templates/.env.example` | Canonical environment variable inventory. |
+
+## Infrastructure starter (Bicep)
+
+| File | Purpose |
+|---|---|
+| `templates/infra/main.bicep` | Default Azure footprint: Static Web App, Function App, Storage, Key Vault, App Insights, Log Analytics. |
+| `templates/infra/main.bicepparam.example` | Example parameter file for the Bicep template. |
+| `templates/infra/README.md` | How to deploy and extend the Bicep starter. |
 
 ## Standards
 
@@ -77,9 +88,27 @@ Portable copy-paste mirrors of the canonical instruction files above. Keep both 
 | `standards/testing-standards.md` | Testing expectations. |
 | `standards/security-standards.md` | Security guardrails. |
 | `standards/api-standards.md` | API design standards. |
+| `standards/observability-standards.md` | Required log fields, alert thresholds, dashboards, SLOs. |
 | `standards/git-workflow.md` | Branching, commits, PRs, and release workflow. |
 | `standards/ci-cd-standards.md` | Build, test, and deployment pipeline standards. |
 | `standards/documentation-standards.md` | Documentation requirements. |
+
+## Architecture decision records
+
+| File | Purpose |
+|---|---|
+| `docs/adr/0001-default-cloud-azure.md` | Azure as the factory's default cloud. |
+| `docs/adr/0002-default-email-postmark.md` | Postmark as the default transactional email provider. |
+| `docs/adr/0003-default-language-typescript.md` | TypeScript as the default implementation language. |
+| `docs/adr/0004-default-iac-bicep.md` | Bicep as the default infrastructure-as-code language. |
+| `docs/adr/0005-greenfield-only-scope.md` | The factory targets greenfield projects only. |
+| `docs/adr/0006-three-agent-signoff.md` | Gate D requires architect + developer + QE + team sign-off. |
+
+## Playbooks
+
+| File | Purpose |
+|---|---|
+| `docs/playbooks/first-project-walkthrough.md` | Worked Intake Mode conversation showing how to turn a one-sentence idea into an approved project brief. |
 
 ## Examples
 
@@ -101,6 +130,7 @@ Worked end-to-end examples that exercise specific blueprints. The marketing-site
 |---|---|
 | `examples/sample-stripe-project-brief.md` | Subscription SaaS project brief using Stripe Checkout. |
 | `examples/sample-stripe-architecture.md` | Subscription SaaS architecture with webhook idempotency. |
+| `examples/sample-stripe-threat-model.md` | Subscription SaaS STRIDE threat model. |
 | `examples/sample-stripe-test-plan.md` | Subscription SaaS Codex/QE test plan. |
 | `examples/sample-stripe-cursor-handoff.md` | Subscription SaaS developer handoff. |
 | `examples/sample-stripe-codex-qe-handoff.md` | Subscription SaaS quality engineer handoff. |

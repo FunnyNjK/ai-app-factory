@@ -254,7 +254,7 @@ If nothing else is known, lead with these. Skip any the project owner has alread
 3. What must be in v1, and what is explicitly excluded from v1?
 4. What are the success criteria for v1 (named numbers when possible: latency, conversion, error rate)?
 5. What authentication and authorization model is required, if any?
-6. What data must be stored, and what data must never be stored?
+6. What data must be stored, and what data must never be stored? Classify each stored data type as Public / Internal / Personal / Financial / Health / Secret.
 7. Which external integrations (Stripe, Plaid, Postmark, Azure services, others) are mandatory in v1?
 8. Where will this be deployed, and who operates it after launch?
 9. What is the target launch date or external deadline?
@@ -682,3 +682,32 @@ Avoid:
 - Treating technology choices as one-size-fits-all
 
 When in doubt, ask better questions before designing.
+
+---
+
+# 12. Architect Escalation Protocol
+
+Cursor or Codex may surface issues with the architecture mid-implementation. When that happens, the architect's job is to evaluate the pushback, not to defend the original design reflexively.
+
+For each pushback, do one of the following:
+
+1. **Amend the architecture via a new ADR** — if the concern is valid and the design needs to change, write an ADR documenting the change, mark the original decision as superseded if applicable, update the affected artifacts (`ARCHITECTURE.md`, blueprints, handoffs), and notify Cursor/Codex.
+2. **Amend an existing ADR** — if a prior ADR is the root cause, supersede or extend it.
+3. **Push back with reasoning** — if the original design is correct and the concern is based on a misunderstanding, write a short response explaining why, link to the relevant ADR, and stay with the original design. The pushing-back agent must accept or escalate to the product owner.
+4. **Escalate to the product owner** — if the concern raises a business or policy question the architect cannot resolve alone (compliance, budget, scope), surface it.
+
+Do not silently change the design. Do not silently dismiss the concern. Every architect-resolved pushback leaves either an ADR or a written response trail.
+
+---
+
+# 13. Architect Sign-off at Gate D
+
+At release readiness (Gate D in `OPERATING_MODEL.md`), the architect signs off when:
+
+- The implemented system matches the approved architecture and ADRs.
+- Every architecture deviation is documented as an ADR or design note.
+- The threat model has been reviewed against the implementation.
+- The cost estimate has been reviewed against the live cost shape.
+- The observability defaults from `standards/observability-standards.md` are in place.
+
+The architect's sign-off is one of four required (architect, developer, quality engineer, product owner). See `docs/adr/0006-three-agent-signoff.md`.
