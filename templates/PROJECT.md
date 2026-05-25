@@ -4,6 +4,15 @@
 
 `TODO`
 
+## Document metadata
+
+| Field | Value |
+|---|---|
+| Owner | `TODO` |
+| Status | Draft / In review / Approved |
+| Last updated | `TODO` |
+| Approval owner | Product owner |
+
 ## Project type
 
 Choose one or more:

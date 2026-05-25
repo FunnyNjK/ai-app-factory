@@ -32,8 +32,9 @@ This is the recommended first AI App Factory project because it is small enough 
 - Form validation
 - Serverless form submission endpoint
 - Postmark email notification
-- Basic SEO metadata
-- Basic accessibility checks
+- SEO metadata for the agreed page title, description, canonical URL, and Open Graph image
+- Accessibility checks for keyboard navigation, labels, focus visibility, heading order, and contrast
+- Anti-abuse controls for the public contact endpoint
 - `.env.example`
 - README setup instructions
 - Release checklist
@@ -148,9 +149,19 @@ Submits a contact form and sends an email.
 - `name` is required.
 - `email` is required and must be a valid email address.
 - `message` is required.
-- Message length should be capped.
-- Unknown fields should be ignored or rejected consistently.
-- Optional spam-protection token should be verified when enabled.
+- `name` must be capped at 120 characters.
+- `email` must be capped at 254 characters.
+- `company` must be capped at 120 characters when provided.
+- `message` must be capped at 2,000 characters.
+- Unknown fields must be rejected with a validation error.
+- Spam-protection token must be verified when bot protection is enabled.
+
+#### Anti-abuse requirements
+
+- Public contact submissions must be rate limited by IP or provider-supported identity.
+- Rapid duplicate submissions from the same browser session must be prevented or safely ignored.
+- A honeypot, Turnstile, hCaptcha, or equivalent bot-control decision must be documented before launch.
+- Anti-abuse failures must return a user-safe error and must not send Postmark email.
 
 #### Success response
 
@@ -189,10 +200,11 @@ Submits a contact form and sends an email.
 - Invalid email addresses are rejected.
 - Valid submission triggers a Postmark email.
 - Secrets are not committed to source control.
-- The form shows useful success and error states.
+- The form shows distinct success, validation-error, rate-limit, bot-check, and provider-failure states.
 - The endpoint does not reveal secret or provider error details.
-- Basic accessibility checks pass.
-- Basic SEO metadata exists.
+- Accessibility smoke checks pass for keyboard-only use, labels, focus visibility, heading order, and 4.5:1 text contrast where applicable.
+- SEO metadata exists for title, description, canonical URL, and Open Graph sharing.
+- Contact submissions are rate limited and duplicate rapid submissions do not send duplicate emails.
 - Deployment instructions are documented.
 
 ---
@@ -209,12 +221,14 @@ Submits a contact form and sends an email.
 
 - Contact endpoint with mocked Postmark client
 - Error handling when Postmark fails
+- Rate-limit or bot-control failure path
 
 ### E2E tests
 
 - Visitor opens home page
 - Visitor submits invalid form and sees validation
 - Visitor submits valid form and sees success
+- Visitor cannot trigger duplicate emails by double-clicking submit
 
 ### Security smoke tests
 
@@ -222,6 +236,7 @@ Submits a contact form and sends an email.
 - CORS behavior is restricted
 - Input length limits are enforced
 - Response does not leak provider errors
+- Rate limiting and bot-control decision are verified before launch
 
 ---
 
@@ -234,5 +249,6 @@ Submits a contact form and sends an email.
 - Emails delivered to intended inbox
 - Logs checked after test submission
 - Analytics verified if included
-- Accessibility smoke check complete
+- Accessibility smoke check complete for keyboard, labels, focus, headings, and contrast
+- Rate limiting and bot-control behavior checked in the deployed environment
 - Rollback path known

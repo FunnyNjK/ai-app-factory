@@ -20,6 +20,7 @@ This repository contains a starter operating system for an AI-assisted app deliv
 |---|---|
 | `.github/workflows/ci.yml` | Starter CI workflow that validates markdown quality and required factory files. |
 | `.github/pull_request_template.md` | PR checklist template aligned with quality and release gates. |
+| `scripts/validate-factory.mjs` | Dependency-free validation script for required artifacts, manifest references, placeholders, and env example safety. |
 
 ## AI Instruction Files
 

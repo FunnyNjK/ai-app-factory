@@ -4,6 +4,15 @@
 
 `TODO`
 
+## Document metadata
+
+| Field | Value |
+|---|---|
+| Owner | Architect / Developer |
+| Status | Draft / Approved / Superseded |
+| Last updated | `TODO` |
+| Source architecture | `TODO` |
+
 ---
 
 ## API summary

@@ -28,7 +28,8 @@ Confirm that visitors can understand the site, submit the contact form, and that
 - User sees success message.
 - Provider failures show safe error message.
 - No secrets are exposed in frontend code.
-- Basic keyboard and label accessibility checks pass.
+- Keyboard navigation, labels, focus visibility, heading order, and contrast checks pass.
+- Duplicate rapid submissions do not send duplicate emails.
 
 ---
 
@@ -46,6 +47,7 @@ Confirm that visitors can understand the site, submit the contact form, and that
 - `POST /api/contact` returns validation error for missing fields.
 - `POST /api/contact` returns success when Postmark mock succeeds.
 - `POST /api/contact` returns safe error when Postmark mock fails.
+- `POST /api/contact` rejects or safely ignores rate-limited duplicate submissions.
 
 ---
 
@@ -54,6 +56,7 @@ Confirm that visitors can understand the site, submit the contact form, and that
 - Visitor opens the home page.
 - Visitor submits empty form and sees validation errors.
 - Visitor submits valid form and sees success state.
+- Visitor double-clicks submit and only one email send is attempted.
 
 ---
 
@@ -63,6 +66,7 @@ Confirm that visitors can understand the site, submit the contact form, and that
 - Confirm `.env.example` has no real secrets.
 - Confirm CORS is restricted.
 - Confirm long messages are rejected or truncated safely.
+- Confirm rate limiting or documented bot control is active before release.
 
 ---
 

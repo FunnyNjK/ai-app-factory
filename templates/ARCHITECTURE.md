@@ -8,6 +8,15 @@
 
 Proposed | Approved | Superseded
 
+## Document metadata
+
+| Field | Value |
+|---|---|
+| Owner | Architect |
+| Last updated | `TODO` |
+| Approval owner | Product owner |
+| Source project brief | `TODO` |
+
 ---
 
 ## Executive summary

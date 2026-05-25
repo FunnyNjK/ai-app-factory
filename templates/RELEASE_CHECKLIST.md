@@ -12,6 +12,16 @@
 
 `TODO`
 
+## Release ownership
+
+| Field | Value |
+|---|---|
+| Release owner | `TODO` |
+| Technical approver | `TODO` |
+| Quality approver | `TODO` |
+| Business approver | `TODO` |
+| Last updated | `TODO` |
+
 ---
 
 ## Build verification

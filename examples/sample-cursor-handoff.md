@@ -72,7 +72,7 @@ ALLOWED_ORIGIN=
 - Form rejects invalid input.
 - Form submits valid input.
 - Backend sends Postmark email.
-- User sees useful success/error state.
+- User sees distinct validation, rate-limit, bot-check, provider-failure, and success states.
 - Secrets are backend-only.
 - Tests cover validation and email payload behavior.
 - Documentation explains local setup.
@@ -84,3 +84,4 @@ ALLOWED_ORIGIN=
 - Postmark domain/sender may not be verified yet.
 - Spam protection may need to be added after launch.
 - CORS must be configured correctly in production.
+- Rate limiting must be configured before public launch.

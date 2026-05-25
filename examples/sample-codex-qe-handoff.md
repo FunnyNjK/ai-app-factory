@@ -36,6 +36,7 @@ Validate that the marketing site contact flow works as intended, protects secret
 | CORS/config | Environment-specific failure risk |
 | Validation | Prevents bad payloads and abuse |
 | Accessibility | Forms must be usable by all visitors |
+| Anti-abuse controls | Public endpoint can be scripted or spammed |
 
 ---
 
@@ -48,6 +49,7 @@ Validate that the marketing site contact flow works as intended, protects secret
 - Valid payload returns success when email provider succeeds.
 - Provider failure returns safe error.
 - Long message is rejected or handled safely.
+- Rate-limited or duplicate submissions do not send duplicate emails.
 
 ---
 
@@ -59,6 +61,7 @@ Validate that the marketing site contact flow works as intended, protects secret
 - Success state is visible.
 - Submit button handles loading state.
 - Duplicate rapid submissions are prevented or handled safely.
+- Rate-limit and bot-check states use user-safe messages.
 
 ---
 
@@ -69,6 +72,7 @@ Validate that the marketing site contact flow works as intended, protects secret
 - CORS is intentional.
 - API does not expose raw Postmark error details.
 - Logs do not contain secrets.
+- Rate limiting or bot-control behavior is enabled before release.
 
 ---
 

@@ -86,6 +86,7 @@ Submits a contact request.
 - Postmark token is backend-only.
 - CORS is restricted to the production domain.
 - Inputs are validated and length-limited.
+- Contact submissions are rate limited and duplicate rapid submissions are ignored or rejected.
 - Provider errors are logged but not exposed directly to users.
 - No secrets are committed to source control.
 
@@ -109,3 +110,4 @@ Submits a contact request.
 | Email delivery failure | Log errors and show safe failure message |
 | Misconfigured sender domain | Verify domain before launch |
 | CORS misconfiguration | Test production origin before release |
+| Duplicate submissions | Disable repeated submits in the UI and enforce server-side rate limiting |

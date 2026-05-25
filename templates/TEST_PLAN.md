@@ -4,6 +4,15 @@
 
 `TODO`
 
+## Document metadata
+
+| Field | Value |
+|---|---|
+| Owner | QE/Analyst |
+| Status | Draft / Approved / Superseded |
+| Last updated | `TODO` |
+| Source architecture | `TODO` |
+
 ---
 
 ## Quality objective

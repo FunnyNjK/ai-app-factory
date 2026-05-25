@@ -22,6 +22,18 @@ Each project should maintain:
 
 ---
 
+## Document metadata
+
+Every project document should identify:
+
+- Owner
+- Status
+- Last updated date
+- Approval owner when the document is part of a quality gate
+- Source document or decision record when another artifact depends on it
+
+---
+
 ## README should include
 
 - Project summary

@@ -52,6 +52,9 @@ ai-app-factory/
     workflows/
       ci.yml
 
+  scripts/
+    validate-factory.mjs
+
   prompts/
     claude-architect.md
     cursor-developer.md

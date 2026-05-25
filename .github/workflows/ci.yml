@@ -22,44 +22,18 @@ jobs:
             **/*.md
             **/*.mdc
 
-  policy-check:
-    name: Factory Policy Presence
+  factory-validation:
+    name: Factory Validation
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify required factory files exist
-        run: |
-          set -euo pipefail
-          required_files=(
-            README.md
-            MANIFEST.md
-            OPERATING_MODEL.md
-            CLAUDE.md
-            AGENTS.md
-            standards/coding-standards.md
-            standards/testing-standards.md
-            standards/security-standards.md
-            standards/api-standards.md
-            standards/ci-cd-standards.md
-            standards/documentation-standards.md
-            templates/PROJECT.md
-            templates/ARCHITECTURE.md
-            templates/API_SPEC.md
-            templates/SECURITY.md
-            templates/TEST_PLAN.md
-            templates/RELEASE_CHECKLIST.md
-            templates/RUNBOOK.md
-            templates/.env.example
-          )
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
-          for file in "${required_files[@]}"; do
-            if [ ! -f "$file" ]; then
-              echo "Missing required file: $file"
-              exit 1
-            fi
-          done
-
-          echo "All required factory files are present."
+      - name: Validate factory artifacts
+        run: node scripts/validate-factory.mjs

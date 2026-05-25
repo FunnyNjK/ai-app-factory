@@ -4,6 +4,15 @@
 
 `TODO`
 
+## Document metadata
+
+| Field | Value |
+|---|---|
+| Owner | Operator / technical owner |
+| Status | Draft / Approved |
+| Last updated | `TODO` |
+| Escalation owner | `TODO` |
+
 ---
 
 ## Purpose

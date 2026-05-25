@@ -4,6 +4,15 @@
 
 `TODO`
 
+## Document metadata
+
+| Field | Value |
+|---|---|
+| Owner | Architect / Security reviewer |
+| Status | Draft / Approved / Superseded |
+| Last updated | `TODO` |
+| Approval owner | Product owner / technical owner |
+
 ---
 
 ## Security summary

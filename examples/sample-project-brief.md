@@ -49,7 +49,8 @@ Generate qualified inbound leads from the website.
 - Azure Function contact endpoint
 - Postmark email send
 - Basic SEO metadata
-- Basic accessibility
+- Accessibility smoke checks for keyboard navigation, labels, focus visibility, headings, and contrast
+- Contact form anti-abuse decision: rate limiting plus honeypot or Turnstile
 - Deployment instructions
 
 ---
@@ -67,7 +68,7 @@ Generate qualified inbound leads from the website.
 
 ## Success criteria
 
-- Site loads quickly on mobile and desktop.
+- Largest Contentful Paint is under 2.5 seconds on the production home page during release smoke testing.
 - Contact form submissions are delivered to the business inbox.
 - User receives clear success/error feedback.
 - Site can be deployed through a documented process.

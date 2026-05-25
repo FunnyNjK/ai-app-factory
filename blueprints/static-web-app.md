@@ -103,5 +103,5 @@ Use serverless backend when:
 - Critical routes work with direct navigation.
 - Environment-specific settings are documented.
 - No secrets are exposed in frontend code.
-- Basic accessibility checks pass.
+- Accessibility smoke checks pass for keyboard navigation, labels or accessible names, focus visibility, heading order, and contrast.
 - Tests cover critical user journeys.
