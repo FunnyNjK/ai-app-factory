@@ -157,7 +157,9 @@ Submits a contact form and sends an email.
 ```json
 {
   "ok": true,
-  "message": "Thanks. Your message was sent."
+  "data": {
+    "message": "Thanks. Your message was sent."
+  }
 }
 ```
 
@@ -169,8 +171,10 @@ Submits a contact form and sends an email.
   "error": {
     "code": "VALIDATION_ERROR",
     "message": "Please check the highlighted fields.",
-    "fields": {
+    "details": {
+      "fields": {
       "email": "Enter a valid email address."
+      }
     }
   }
 }

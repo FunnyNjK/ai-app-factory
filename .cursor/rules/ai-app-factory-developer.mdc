@@ -287,10 +287,11 @@ Recommended error shape:
 
 ```json
 {
+  "ok": false,
   "error": {
     "code": "VALIDATION_ERROR",
     "message": "A user-safe error message.",
-    "details": []
+    "details": {}
   }
 }
 ```

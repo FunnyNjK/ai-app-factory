@@ -32,7 +32,11 @@ TODO
 Copy the example environment file:
 
 ```bash
+# macOS/Linux
 cp .env.example .env.local
+
+# Windows PowerShell
+Copy-Item .env.example .env.local
 ```
 
 Fill in required values.

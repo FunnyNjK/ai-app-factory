@@ -13,6 +13,7 @@ Each project should maintain:
 - `README.md`
 - `PROJECT.md`
 - `ARCHITECTURE.md`
+- `API_SPEC.md` for API/webhook projects (or OpenAPI spec)
 - `SECURITY.md`
 - `TEST_PLAN.md`
 - `RELEASE_CHECKLIST.md`

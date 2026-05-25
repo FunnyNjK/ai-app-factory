@@ -56,7 +56,9 @@ Submits a contact request.
 ```json
 {
   "ok": true,
-  "message": "Thanks. Your message was sent."
+  "data": {
+    "message": "Thanks. Your message was sent."
+  }
 }
 ```
 
@@ -68,8 +70,10 @@ Submits a contact request.
   "error": {
     "code": "VALIDATION_ERROR",
     "message": "Please check the form fields.",
-    "fields": {
+    "details": {
+      "fields": {
       "email": "Enter a valid email address."
+      }
     }
   }
 }

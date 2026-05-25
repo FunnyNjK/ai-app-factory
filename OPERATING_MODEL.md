@@ -368,6 +368,7 @@ The factory has captured:
 
 - `PROJECT.md`
 - `ARCHITECTURE.md`
+- `API_SPEC.md` for API-first and webhook projects
 - `SECURITY.md`
 - `TEST_PLAN.md`
 - `RELEASE_CHECKLIST.md`

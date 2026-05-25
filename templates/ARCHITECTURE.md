@@ -111,7 +111,8 @@ sequenceDiagram
   "ok": false,
   "error": {
     "code": "ERROR_CODE",
-    "message": "Safe user-facing message."
+    "message": "Safe user-facing message.",
+    "details": {}
   }
 }
 ```

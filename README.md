@@ -36,6 +36,7 @@ This repository focuses on web development projects such as:
 
 ```text
 ai-app-factory/
+  .markdownlint-cli2.jsonc
   README.md
   OPERATING_MODEL.md
   MANIFEST.md
@@ -45,6 +46,11 @@ ai-app-factory/
   .cursor/
     rules/
       ai-app-factory-developer.mdc
+
+  .github/
+    pull_request_template.md
+    workflows/
+      ci.yml
 
   prompts/
     claude-architect.md
@@ -64,6 +70,7 @@ ai-app-factory/
   templates/
     PROJECT.md
     ARCHITECTURE.md
+    API_SPEC.md
     SECURITY.md
     TEST_PLAN.md
     RELEASE_CHECKLIST.md

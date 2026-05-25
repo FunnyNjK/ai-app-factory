@@ -12,6 +12,14 @@ This repository contains a starter operating system for an AI-assisted app deliv
 | `CLAUDE.md` | Repository-level instruction file for Claude as Software Architect / Solution Designer. |
 | `AGENTS.md` | Repository-level instruction file for Codex as Software Analyst / Quality Engineer. |
 | `.cursor/rules/ai-app-factory-developer.mdc` | Cursor rules file for Cursor as Software Developer. |
+| `.markdownlint-cli2.jsonc` | Repository markdown lint configuration used by CI. |
+
+## CI/CD automation
+
+| File | Purpose |
+|---|---|
+| `.github/workflows/ci.yml` | Starter CI workflow that validates markdown quality and required factory files. |
+| `.github/pull_request_template.md` | PR checklist template aligned with quality and release gates. |
 
 ## AI Instruction Files
 
@@ -48,6 +56,7 @@ This repository contains a starter operating system for an AI-assisted app deliv
 |---|---|
 | `templates/PROJECT.md` | Project brief template. |
 | `templates/ARCHITECTURE.md` | Architecture package template. |
+| `templates/API_SPEC.md` | API contract template for API/webhook projects. |
 | `templates/SECURITY.md` | Security model template. |
 | `templates/TEST_PLAN.md` | Test strategy and test plan template. |
 | `templates/RELEASE_CHECKLIST.md` | Release readiness checklist template. |
