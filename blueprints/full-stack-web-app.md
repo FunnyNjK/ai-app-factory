@@ -52,6 +52,8 @@ flowchart TD
 | Hosting | Azure Static Web Apps, App Service, Container Apps, or Functions |
 | Tests | Unit, integration, API, Playwright E2E |
 
+> **Database default:** PostgreSQL (Flexible Server), then Azure SQL, then Cosmos DB. See `docs/adr/0007-default-database-postgres-then-sql-then-cosmos.md` for the decision and trade-offs.
+
 ---
 
 ## Architect intake questions

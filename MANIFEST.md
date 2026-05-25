@@ -69,6 +69,7 @@ Portable copy-paste mirrors of the canonical instruction files above. Keep both 
 | `templates/TEST_PLAN.md` | Test strategy and test plan template. |
 | `templates/RELEASE_CHECKLIST.md` | Release readiness checklist template. |
 | `templates/RUNBOOK.md` | Operational runbook template. |
+| `templates/SIGNOFF.md` | Four-party Gate D sign-off note template (one section per role). |
 | `templates/ADR.md` | Architecture decision record template. |
 | `templates/.env.example` | Canonical environment variable inventory. |
 
@@ -103,12 +104,14 @@ Portable copy-paste mirrors of the canonical instruction files above. Keep both 
 | `docs/adr/0004-default-iac-bicep.md` | Bicep as the default infrastructure-as-code language. |
 | `docs/adr/0005-greenfield-only-scope.md` | The factory targets greenfield projects only. |
 | `docs/adr/0006-three-agent-signoff.md` | Gate D requires architect + developer + QE + team sign-off. |
+| `docs/adr/0007-default-database-postgres-then-sql-then-cosmos.md` | PostgreSQL is the default relational store, with Azure SQL and Cosmos DB as fallbacks. |
 
 ## Playbooks
 
 | File | Purpose |
 |---|---|
 | `docs/playbooks/first-project-walkthrough.md` | Worked Intake Mode conversation showing how to turn a one-sentence idea into an approved project brief. |
+| `docs/playbooks/escalation-trail-example.md` | Worked example of the architect escalation protocol firing: Codex flags an issue, architect amends via ADR. |
 
 ## Examples
 
@@ -123,6 +126,7 @@ Worked end-to-end examples that exercise specific blueprints. The marketing-site
 | `examples/sample-test-plan.md` | Marketing-site Codex/QE test plan. |
 | `examples/sample-cursor-handoff.md` | Marketing-site developer handoff. |
 | `examples/sample-codex-qe-handoff.md` | Marketing-site quality engineer handoff. |
+| `examples/sample-marketing-site-signoffs.md` | Marketing-site worked exemplar of the four Gate D sign-offs. |
 
 ### Stripe-subscription example
 
