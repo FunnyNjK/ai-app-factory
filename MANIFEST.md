@@ -9,6 +9,17 @@ This repository contains a starter operating system for an AI-assisted app deliv
 | `README.md` | Start here. Explains the repo purpose and workflow. |
 | `OPERATING_MODEL.md` | Full AI App Factory operating model. |
 | `MANIFEST.md` | Inventory of files and how to use them. |
+| `CLAUDE.md` | Repository-level instruction file for Claude as Software Architect / Solution Designer. |
+| `AGENTS.md` | Repository-level instruction file for Codex as Software Analyst / Quality Engineer. |
+| `.cursor/rules/ai-app-factory-developer.mdc` | Cursor rules file for Cursor as Software Developer. |
+
+## AI Instruction Files
+
+| File | Purpose |
+|---|---|
+| `CLAUDE.md` | Use with Claude so it behaves as the AI App Factory architect and solution designer. |
+| `.cursor/rules/ai-app-factory-developer.mdc` | Use with Cursor so it behaves as the implementation-focused software developer. |
+| `AGENTS.md` | Use with Codex so it behaves as the analyst, QA, and release-readiness reviewer. |
 
 ## Prompts
 

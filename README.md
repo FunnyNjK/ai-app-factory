@@ -39,6 +39,12 @@ ai-app-factory/
   README.md
   OPERATING_MODEL.md
   MANIFEST.md
+  CLAUDE.md
+  AGENTS.md
+
+  .cursor/
+    rules/
+      ai-app-factory-developer.mdc
 
   prompts/
     claude-architect.md
@@ -107,14 +113,16 @@ That project gives you a small but realistic proof of the whole factory process:
 
 ## Suggested workflow
 
-1. Give Claude the role prompt in `prompts/claude-architect.md`.
+1. Use `CLAUDE.md` as the AI-specific instruction file for Claude as architect.
 2. Ask Claude to work in **Intake Mode** for your selected blueprint.
 3. When the design is ready, ask Claude for a **Cursor Developer Handoff**.
-4. Give the handoff to Cursor using `prompts/cursor-developer.md`.
-5. Give the requirements and architecture to Codex using `prompts/codex-quality-engineer.md`.
+4. Use `.cursor/rules/ai-app-factory-developer.mdc` as the Cursor rules file for development.
+5. Use `AGENTS.md` as the Codex instruction file for analysis, QA, and release readiness.
 6. Let Codex produce acceptance criteria, risk-based tests, and release checks.
 7. Build in small vertical slices.
 8. Use the templates and standards in this repo to keep every project consistent.
+
+The `prompts/` folder contains portable prompt versions of the same role concepts. The root AI instruction files are intended for tools that automatically read repository-level instructions.
 
 ---
 
