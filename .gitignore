@@ -29,3 +29,6 @@ pnpm-debug.log*
 coverage/
 playwright-report/
 test-results/
+
+# FUSE mount temp files (artifact of editing through the mount)
+.fuse_hidden*

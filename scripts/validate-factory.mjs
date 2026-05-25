@@ -1,5 +1,9 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { extname, join, relative } from "node:path";
+import { dirname, extname, join, relative, resolve } from "node:path";
+
+// ---------------------------------------------------------------------------
+// Configuration
+// ---------------------------------------------------------------------------
 
 const root = process.cwd();
 
@@ -7,10 +11,12 @@ const requiredFiles = [
   ".cursor/rules/ai-app-factory-developer.mdc",
   ".github/pull_request_template.md",
   ".github/workflows/ci.yml",
+  ".gitattributes",
   ".gitignore",
   ".markdownlint-cli2.jsonc",
   "AGENTS.md",
   "CLAUDE.md",
+  "CONTRIBUTING.md",
   "MANIFEST.md",
   "OPERATING_MODEL.md",
   "README.md",
@@ -27,6 +33,16 @@ const requiredFiles = [
   "examples/sample-cursor-handoff.md",
   "examples/sample-project-brief.md",
   "examples/sample-test-plan.md",
+  "examples/sample-plaid-architecture.md",
+  "examples/sample-plaid-codex-qe-handoff.md",
+  "examples/sample-plaid-cursor-handoff.md",
+  "examples/sample-plaid-project-brief.md",
+  "examples/sample-plaid-test-plan.md",
+  "examples/sample-stripe-architecture.md",
+  "examples/sample-stripe-codex-qe-handoff.md",
+  "examples/sample-stripe-cursor-handoff.md",
+  "examples/sample-stripe-project-brief.md",
+  "examples/sample-stripe-test-plan.md",
   "prompts/claude-architect.md",
   "prompts/codex-quality-engineer.md",
   "prompts/cursor-developer.md",
@@ -66,6 +82,35 @@ const vagueQualityPhrases = [
   "useful success and error",
 ];
 
+const linkCheckIgnoredExactPaths = new Set([
+  "src/",
+  "tests/",
+  "docs/",
+  "api/",
+  "node_modules/",
+  "dist/",
+  "build/",
+  ".next/",
+  ".vercel/",
+  ".output/",
+  "coverage/",
+  "playwright-report/",
+  "test-results/",
+  ".vscode/",
+  ".idea/",
+  "src/components/Foo.tsx",
+  "api/functions/contact/index.ts",
+  "app/ or pages/",
+]);
+
+const linkCheckIgnoredPrefixes = ["http://", "https://", "mailto:"];
+const linkCheckPathLikePattern = /^[^\s*`]+\/[^\s*`]+$/;
+const envVarReferencePattern = /^([A-Z][A-Z0-9_]{2,})=/;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 const errors = [];
 
 function fail(message) {
@@ -97,77 +142,168 @@ function walk(dir) {
   });
 }
 
-for (const file of requiredFiles) {
-  if (!existsSync(repoPath(file))) {
-    fail(`Missing required factory file: ${file}`);
+function isMarkdown(file) {
+  const ext = extname(file).toLowerCase();
+  return ext === ".md" || ext === ".mdc";
+}
+
+function looksLikeFilePath(candidate) {
+  if (!linkCheckPathLikePattern.test(candidate)) return false;
+  if (candidate.endsWith("/")) return false;
+  if (linkCheckIgnoredExactPaths.has(candidate)) return false;
+  if (linkCheckIgnoredPrefixes.some((p) => candidate.startsWith(p))) return false;
+  if (/[\s()=]/.test(candidate)) return false;
+  if (candidate.startsWith("/api/") || candidate.startsWith("api/v")) return false;
+  if (/^ADR-/i.test(candidate)) return false;
+  if (/[<>]/.test(candidate)) return false;
+  if (!/\.[A-Za-z0-9]+$/.test(candidate)) return false;
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// Checks
+// ---------------------------------------------------------------------------
+
+function checkRequiredFilesExist() {
+  for (const file of requiredFiles) {
+    if (!existsSync(repoPath(file))) {
+      fail(`Missing required factory file: ${file}`);
+    }
   }
 }
 
-for (const file of walk(root)) {
-  const repoRelativePath = toRepoPath(file);
-  const extension = extname(file).toLowerCase();
-  const content = readFileSync(file, "utf8");
+function checkPerFileContent() {
+  for (const file of walk(root)) {
+    const repoRelativePath = toRepoPath(file);
+    const extension = extname(file).toLowerCase();
+    const content = readFileSync(file, "utf8");
 
-  if ([".md", ".mdc"].includes(extension)) {
-    const fenceCount = (content.match(/^```/gm) ?? []).length;
-    if (fenceCount % 2 !== 0) {
-      fail(`Unclosed Markdown code fence in ${repoRelativePath}`);
+    if (isMarkdown(file)) {
+      const fenceCount = (content.match(/^```/gm) ?? []).length;
+      if (fenceCount % 2 !== 0) {
+        fail(`Unclosed Markdown code fence in ${repoRelativePath}`);
+      }
+
+      if (!repoRelativePath.startsWith("templates/") && /\bTODO\b/.test(content)) {
+        fail(`TODO placeholder found outside templates: ${repoRelativePath}`);
+      }
+
+      const lowerContent = content.toLowerCase();
+      for (const phrase of vagueQualityPhrases) {
+        if (lowerContent.includes(phrase)) {
+          fail(`Vague quality phrase "${phrase}" found in ${repoRelativePath}`);
+        }
+      }
     }
 
-    if (!repoRelativePath.startsWith("templates/") && /\bTODO\b/.test(content)) {
-      fail(`TODO placeholder found outside templates: ${repoRelativePath}`);
-    }
-
-    const lowerContent = content.toLowerCase();
-    for (const phrase of vagueQualityPhrases) {
-      if (lowerContent.includes(phrase)) {
-        fail(`Vague quality phrase "${phrase}" found in ${repoRelativePath}`);
+    if (extension === ".json" || extension === ".jsonc") {
+      try {
+        JSON.parse(content.replace(/^\s*\/\/.*$/gm, ""));
+      } catch (error) {
+        fail(`Invalid JSON-like file ${repoRelativePath}: ${error.message}`);
       }
     }
   }
+}
 
-  if (extension === ".json" || extension === ".jsonc") {
-    try {
-      JSON.parse(content.replace(/^\s*\/\/.*$/gm, ""));
-    } catch (error) {
-      fail(`Invalid JSON-like file ${repoRelativePath}: ${error.message}`);
+function checkManifestPaths() {
+  const manifest = read("MANIFEST.md");
+  const manifestPaths = [...manifest.matchAll(/`([^`]+)`/g)]
+    .map((match) => match[1])
+    .filter((entry) => /[/.]/.test(entry) && !entry.includes("*"))
+    .filter((entry) => !entry.endsWith("/"))
+    .filter((entry) => !/[<>]/.test(entry));
+
+  for (const path of manifestPaths) {
+    if (!existsSync(repoPath(path))) {
+      fail(`MANIFEST.md references a missing path: ${path}`);
     }
   }
 }
 
-const manifest = read("MANIFEST.md");
-const manifestPaths = [...manifest.matchAll(/`([^`]+)`/g)]
-  .map((match) => match[1])
-  .filter((entry) => /[/.]/.test(entry) && !entry.includes("*"))
-  .filter((entry) => !entry.endsWith("/"));
+function checkCrossDocBacktickPaths() {
+  for (const file of walk(root)) {
+    const repoRelativePath = toRepoPath(file);
+    if (!isMarkdown(file)) continue;
+    if (repoRelativePath === "MANIFEST.md") continue;
 
-for (const path of manifestPaths) {
-  if (!existsSync(repoPath(path))) {
-    fail(`MANIFEST.md references a missing path: ${path}`);
+    const content = readFileSync(file, "utf8");
+    const fileDir = dirname(file);
+
+    for (const match of content.matchAll(/`([^`\n]+)`/g)) {
+      let candidate = match[1].trim().replace(/#.*$/, "");
+      if (!looksLikeFilePath(candidate)) continue;
+
+      const rootResolved = repoPath(candidate);
+      const localResolved = resolve(fileDir, candidate);
+      if (existsSync(rootResolved) || existsSync(localResolved)) continue;
+
+      fail(`${repoRelativePath} references a missing path: \`${candidate}\``);
+    }
   }
 }
 
-const envExample = read("templates/.env.example");
-for (const [index, line] of envExample.split(/\r?\n/).entries()) {
-  if (!line || line.startsWith("#")) {
-    continue;
+function parseEnvExample() {
+  const envExample = read("templates/.env.example");
+  const envExampleNames = new Set();
+  for (const [index, line] of envExample.split(/\r?\n/).entries()) {
+    if (!line || line.startsWith("#")) continue;
+    const match = line.match(/^([A-Z0-9_]+)=(.*)$/);
+    if (!match) {
+      fail(`Invalid env example line ${index + 1}: ${line}`);
+      continue;
+    }
+    const [, key, value] = match;
+    envExampleNames.add(key);
+    if (value && allowedEnvDefaults.get(key) !== value) {
+      fail(`templates/.env.example contains a non-placeholder value for ${key}`);
+    }
   }
-  const match = line.match(/^([A-Z0-9_]+)=(.*)$/);
-  if (!match) {
-    fail(`Invalid env example line ${index + 1}: ${line}`);
-    continue;
-  }
-  const [, key, value] = match;
-  if (value && allowedEnvDefaults.get(key) !== value) {
-    fail(`templates/.env.example contains a non-placeholder value for ${key}`);
+  return envExampleNames;
+}
+
+function checkCrossDocEnvVars(envExampleNames) {
+  for (const file of walk(root)) {
+    const repoRelativePath = toRepoPath(file);
+    if (!isMarkdown(file)) continue;
+
+    const content = readFileSync(file, "utf8");
+    const seen = new Set();
+    for (const line of content.split(/\r?\n/)) {
+      const match = line.match(envVarReferencePattern);
+      if (!match) continue;
+      const name = match[1];
+      if (seen.has(name)) continue;
+      seen.add(name);
+      if (!envExampleNames.has(name)) {
+        fail(
+          `Env variable "${name}" referenced in ${repoRelativePath} but not declared in templates/.env.example`,
+        );
+      }
+    }
   }
 }
 
-for (const file of requiredFiles) {
-  if (statSync(repoPath(file)).size === 0) {
-    fail(`Required file is empty: ${file}`);
+function checkRequiredFilesNonEmpty() {
+  for (const file of requiredFiles) {
+    if (!existsSync(repoPath(file))) continue;
+    if (statSync(repoPath(file)).size === 0) {
+      fail(`Required file is empty: ${file}`);
+    }
   }
 }
+
+// ---------------------------------------------------------------------------
+// Run all checks
+// ---------------------------------------------------------------------------
+
+checkRequiredFilesExist();
+checkPerFileContent();
+checkManifestPaths();
+checkCrossDocBacktickPaths();
+const envExampleNames = parseEnvExample();
+checkCrossDocEnvVars(envExampleNames);
+checkRequiredFilesNonEmpty();
 
 if (errors.length > 0) {
   console.error("Factory validation failed:");

@@ -153,3 +153,9 @@ APP_BASE_URL=
 - Transactions can be synced when enabled.
 - Webhooks are handled safely.
 - Reauth/error states are documented.
+
+---
+
+## Worked example
+
+For a complete walkthrough of this blueprint applied to a personal-finance dashboard, see `examples/sample-plaid-architecture.md` along with the matching project brief, test plan, and developer/QE handoffs.

@@ -9,9 +9,12 @@ This repository contains a starter operating system for an AI-assisted app deliv
 | `README.md` | Start here. Explains the repo purpose and workflow. |
 | `OPERATING_MODEL.md` | Full AI App Factory operating model. |
 | `MANIFEST.md` | Inventory of files and how to use them. |
+| `CONTRIBUTING.md` | How to add or change factory artifacts without breaking the operating model. |
 | `CLAUDE.md` | Repository-level instruction file for Claude as Software Architect / Solution Designer. |
 | `AGENTS.md` | Repository-level instruction file for Codex as Software Analyst / Quality Engineer. |
 | `.cursor/rules/ai-app-factory-developer.mdc` | Cursor rules file for Cursor as Software Developer. |
+| `.gitattributes` | Normalizes line endings to LF for all text files. |
+| `.gitignore` | Standard ignore list for build outputs, env files, and editor metadata. |
 | `.markdownlint-cli2.jsonc` | Repository markdown lint configuration used by CI. |
 
 ## CI/CD automation
@@ -20,23 +23,25 @@ This repository contains a starter operating system for an AI-assisted app deliv
 |---|---|
 | `.github/workflows/ci.yml` | Starter CI workflow that validates markdown quality and required factory files. |
 | `.github/pull_request_template.md` | PR checklist template aligned with quality and release gates. |
-| `scripts/validate-factory.mjs` | Dependency-free validation script for required artifacts, manifest references, placeholders, and env example safety. |
+| `scripts/validate-factory.mjs` | Dependency-free validation script for required artifacts, manifest references, backtick path resolution, placeholder safety, and env-var cross-consistency. |
 
 ## AI Instruction Files
 
 | File | Purpose |
 |---|---|
-| `CLAUDE.md` | Use with Claude so it behaves as the AI App Factory architect and solution designer. |
-| `.cursor/rules/ai-app-factory-developer.mdc` | Use with Cursor so it behaves as the implementation-focused software developer. |
-| `AGENTS.md` | Use with Codex so it behaves as the analyst, QA, and release-readiness reviewer. |
+| `CLAUDE.md` | Canonical instruction file for Claude as architect (auto-loaded). |
+| `.cursor/rules/ai-app-factory-developer.mdc` | Canonical rules file for Cursor as developer (auto-loaded). |
+| `AGENTS.md` | Canonical instruction file for Codex as analyst/QE (auto-loaded). |
 
 ## Prompts
 
+Portable copy-paste mirrors of the canonical instruction files above. Keep both surfaces in sync; the canonical files win on conflict.
+
 | File | Purpose |
 |---|---|
-| `prompts/claude-architect.md` | Role prompt for Claude as Software Architect / Solution Designer. |
-| `prompts/cursor-developer.md` | Role prompt for Cursor AI as Software Developer. |
-| `prompts/codex-quality-engineer.md` | Role prompt for Codex as Software Analyst / Quality Engineer. |
+| `prompts/claude-architect.md` | Portable role prompt for Claude as Software Architect / Solution Designer. |
+| `prompts/cursor-developer.md` | Portable role prompt for Cursor AI as Software Developer. |
+| `prompts/codex-quality-engineer.md` | Portable role prompt for Codex as Software Analyst / Quality Engineer. |
 
 ## Blueprints
 
@@ -62,7 +67,7 @@ This repository contains a starter operating system for an AI-assisted app deliv
 | `templates/TEST_PLAN.md` | Test strategy and test plan template. |
 | `templates/RELEASE_CHECKLIST.md` | Release readiness checklist template. |
 | `templates/RUNBOOK.md` | Operational runbook template. |
-| `templates/.env.example` | Example environment variable file. |
+| `templates/.env.example` | Canonical environment variable inventory. |
 
 ## Standards
 
@@ -78,10 +83,34 @@ This repository contains a starter operating system for an AI-assisted app deliv
 
 ## Examples
 
+Worked end-to-end examples that exercise specific blueprints. The marketing-site example shipped first and uses unprefixed file names; subsequent examples use a `sample-<project>-<artifact>.md` naming pattern.
+
+### Marketing-site example
+
 | File | Purpose |
 |---|---|
-| `examples/sample-project-brief.md` | Example project brief for the first blueprint. |
-| `examples/sample-architecture.md` | Example architecture package. |
-| `examples/sample-test-plan.md` | Example Codex/QE test plan. |
-| `examples/sample-cursor-handoff.md` | Example developer handoff. |
-| `examples/sample-codex-qe-handoff.md` | Example quality engineer handoff. |
+| `examples/sample-project-brief.md` | Marketing-site project brief. |
+| `examples/sample-architecture.md` | Marketing-site architecture package. |
+| `examples/sample-test-plan.md` | Marketing-site Codex/QE test plan. |
+| `examples/sample-cursor-handoff.md` | Marketing-site developer handoff. |
+| `examples/sample-codex-qe-handoff.md` | Marketing-site quality engineer handoff. |
+
+### Stripe-subscription example
+
+| File | Purpose |
+|---|---|
+| `examples/sample-stripe-project-brief.md` | Subscription SaaS project brief using Stripe Checkout. |
+| `examples/sample-stripe-architecture.md` | Subscription SaaS architecture with webhook idempotency. |
+| `examples/sample-stripe-test-plan.md` | Subscription SaaS Codex/QE test plan. |
+| `examples/sample-stripe-cursor-handoff.md` | Subscription SaaS developer handoff. |
+| `examples/sample-stripe-codex-qe-handoff.md` | Subscription SaaS quality engineer handoff. |
+
+### Plaid personal-finance example
+
+| File | Purpose |
+|---|---|
+| `examples/sample-plaid-project-brief.md` | Personal-finance dashboard project brief using Plaid Link. |
+| `examples/sample-plaid-architecture.md` | Personal-finance dashboard architecture with Key Vault-backed token storage. |
+| `examples/sample-plaid-test-plan.md` | Personal-finance dashboard Codex/QE test plan. |
+| `examples/sample-plaid-cursor-handoff.md` | Personal-finance dashboard developer handoff. |
+| `examples/sample-plaid-codex-qe-handoff.md` | Personal-finance dashboard quality engineer handoff. |

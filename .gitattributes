@@ -1,0 +1,20 @@
+# Normalize line endings.
+# Force LF on all text files so Windows checkouts do not produce CRLF churn.
+* text=auto eol=lf
+
+# Explicit text overrides for files git may otherwise treat as binary.
+*.md       text eol=lf
+*.mdc      text eol=lf
+*.mjs      text eol=lf
+*.js       text eol=lf
+*.ts       text eol=lf
+*.json     text eol=lf
+*.jsonc    text eol=lf
+*.yml      text eol=lf
+*.yaml     text eol=lf
+*.example  text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# Shell and config helpers
+*.sh       text eol=lf

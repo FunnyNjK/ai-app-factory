@@ -127,3 +127,9 @@ APP_BASE_URL=
 - Failed payments are handled.
 - Secrets are not exposed.
 - Tests cover checkout creation and webhook handling.
+
+---
+
+## Worked example
+
+For a complete walkthrough of this blueprint applied to a subscription SaaS, see `examples/sample-stripe-architecture.md` along with the matching project brief, test plan, and developer/QE handoffs.
