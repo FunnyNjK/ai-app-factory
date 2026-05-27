@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+.next/
+.vercel/
+.output/
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+
+# Environment files (never commit real secrets)
+.env
+.env.local
+.env.*.local
+
+# Editor and OS metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Claude local settings (per-developer)
+.claude/settings.local.json

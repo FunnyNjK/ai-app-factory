@@ -49,7 +49,6 @@ main.prod.bicepparam
 
 Never put real secrets in parameter files. Secrets live in Key Vault and are referenced from the app at runtime via managed identity.
 
-
 The database default is PostgreSQL (see `docs/adr/0007-default-database-postgres-then-sql-then-cosmos.md`). When the first real project needs it, add a `postgres.bicep` (under a future `modules/` subdirectory) module wired into `main.bicep` behind an `enablePostgres` parameter. Until then this directory ships without a database module on purpose: speculative modules go stale fast.
 
 ## What lives outside this file

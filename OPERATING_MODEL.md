@@ -244,7 +244,7 @@ Output:
 
 ### Phase 4 — Implementation
 
-Cursor builds in vertical slices.
+Cursor builds in vertical slices. Each slice is gated by Codex review before the next slice begins (see `docs/adr/0008-per-slice-and-per-phase-gating.md`). Slice status moves through `pending → in-progress → awaiting-review → approved` in the project's `TASKS.md`. If Codex files sub-tasks, the slice returns to `in-progress` until the per-task iteration cap or approval.
 
 Output per slice:
 
@@ -254,20 +254,22 @@ Output per slice:
 - Known issues
 - Screenshots or API examples when useful
 - Pull request notes
+- Slice status updated in `TASKS.md`
 
 ---
 
 ### Phase 5 — QE verification
 
-Codex validates the build against requirements.
+Codex validates the build against requirements. Codex performs per-slice review during Phase 4 (filing sub-tasks when slices fail acceptance criteria); at each phase boundary, when every slice in a phase reaches `approved`, Claude performs a per-phase review (see `docs/adr/0008-per-slice-and-per-phase-gating.md`). Any iteration cap hit or judgment call routes to `ESCALATIONS.md` for the product owner.
 
 Output:
 
 - Test execution summary
-- Bugs found
+- Bugs found (filed as sub-tasks in `TASKS.md` during slice review)
 - Risk assessment
 - Regression recommendations
 - Release readiness decision
+- Phase review notes from Claude
 
 ---
 

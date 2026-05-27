@@ -35,6 +35,8 @@ const requiredFiles = [
   "docs/adr/0005-greenfield-only-scope.md",
   "docs/adr/0006-three-agent-signoff.md",
   "docs/adr/0007-default-database-postgres-then-sql-then-cosmos.md",
+  "docs/adr/0008-per-slice-and-per-phase-gating.md",
+  "docs/adr/0009-autonomous-orchestrator.md",
   "docs/playbooks/escalation-trail-example.md",
   "docs/playbooks/first-project-walkthrough.md",
   "examples/sample-architecture.md",

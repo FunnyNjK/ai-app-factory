@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)",
+      "Bash(node scripts/validate-factory.mjs)",
+      "Bash(npx markdownlint-cli2:*)"
+    ]
+  }
+}

@@ -6,12 +6,12 @@
 
 ## Document metadata
 
-| Field | Value |
-|---|---|
-| Owner | Architect |
-| Status | Draft / Reviewed / Approved |
-| Last updated | `TODO` |
-| Source architecture | `TODO` |
+| Field               | Value                       |
+|---------------------|-----------------------------|
+| Owner               | Architect                   |
+| Status              | Draft / Reviewed / Approved |
+| Last updated        | `TODO`                      |
+| Source architecture | `TODO`                      |
 
 ---
 
@@ -25,9 +25,9 @@ What system or feature does this threat model cover? What is explicitly out of s
 
 What is worth protecting? List every distinct asset and its sensitivity.
 
-| Asset | Description | Sensitivity | Owner |
-|---|---|---|---|
-| `TODO` | `TODO` | Public / Internal / Personal / Financial / Health / Secret | `TODO` |
+| Asset  | Description | Sensitivity                                                | Owner  |
+|--------|-------------|------------------------------------------------------------|--------|
+| `TODO` | `TODO`      | Public / Internal / Personal / Financial / Health / Secret | `TODO` |
 
 ---
 
@@ -45,9 +45,9 @@ flowchart LR
 
 List each boundary explicitly:
 
-| Boundary | Crosses | What flows | Trust change |
-|---|---|---|---|
-| `TODO` | User → Frontend | `TODO` | Untrusted → Browser-trusted |
+| Boundary | Crosses         | What flows | Trust change                |
+|----------|-----------------|------------|-----------------------------|
+| `TODO`   | User → Frontend | `TODO`     | Untrusted → Browser-trusted |
 
 ---
 
@@ -57,39 +57,39 @@ For each component or boundary, walk through the six STRIDE categories. Skip cat
 
 ### Spoofing — pretending to be someone you are not
 
-| Threat | Affected component | Likelihood | Impact | Mitigation | Owner |
-|---|---|---:|---:|---|---|
-| `TODO` | `TODO` | Low / Med / High | Low / Med / High | `TODO` | `TODO` |
+| Threat | Affected component |       Likelihood |           Impact | Mitigation | Owner  |
+|--------|--------------------|-----------------:|-----------------:|------------|--------|
+| `TODO` | `TODO`             | Low / Med / High | Low / Med / High | `TODO`     | `TODO` |
 
 ### Tampering — modifying data or code without authorization
 
-| Threat | Affected component | Likelihood | Impact | Mitigation | Owner |
-|---|---|---:|---:|---|---|
-| `TODO` | `TODO` | Low / Med / High | Low / Med / High | `TODO` | `TODO` |
+| Threat | Affected component |       Likelihood |           Impact | Mitigation | Owner  |
+|--------|--------------------|-----------------:|-----------------:|------------|--------|
+| `TODO` | `TODO`             | Low / Med / High | Low / Med / High | `TODO`     | `TODO` |
 
 ### Repudiation — denying that an action took place
 
-| Threat | Affected component | Likelihood | Impact | Mitigation | Owner |
-|---|---|---:|---:|---|---|
-| `TODO` | `TODO` | Low / Med / High | Low / Med / High | `TODO` | `TODO` |
+| Threat | Affected component |       Likelihood |           Impact | Mitigation | Owner  |
+|--------|--------------------|-----------------:|-----------------:|------------|--------|
+| `TODO` | `TODO`             | Low / Med / High | Low / Med / High | `TODO`     | `TODO` |
 
 ### Information disclosure — leaking data that should be private
 
-| Threat | Affected component | Likelihood | Impact | Mitigation | Owner |
-|---|---|---:|---:|---|---|
-| `TODO` | `TODO` | Low / Med / High | Low / Med / High | `TODO` | `TODO` |
+| Threat | Affected component |       Likelihood |           Impact | Mitigation | Owner  |
+|--------|--------------------|-----------------:|-----------------:|------------|--------|
+| `TODO` | `TODO`             | Low / Med / High | Low / Med / High | `TODO`     | `TODO` |
 
 ### Denial of service — making the system unavailable
 
-| Threat | Affected component | Likelihood | Impact | Mitigation | Owner |
-|---|---|---:|---:|---|---|
-| `TODO` | `TODO` | Low / Med / High | Low / Med / High | `TODO` | `TODO` |
+| Threat | Affected component |       Likelihood |           Impact | Mitigation | Owner  |
+|--------|--------------------|-----------------:|-----------------:|------------|--------|
+| `TODO` | `TODO`             | Low / Med / High | Low / Med / High | `TODO`     | `TODO` |
 
 ### Elevation of privilege — performing actions you are not authorized to perform
 
-| Threat | Affected component | Likelihood | Impact | Mitigation | Owner |
-|---|---|---:|---:|---|---|
-| `TODO` | `TODO` | Low / Med / High | Low / Med / High | `TODO` | `TODO` |
+| Threat | Affected component |       Likelihood |           Impact | Mitigation | Owner  |
+|--------|--------------------|-----------------:|-----------------:|------------|--------|
+| `TODO` | `TODO`             | Low / Med / High | Low / Med / High | `TODO`     | `TODO` |
 
 ---
 
@@ -97,17 +97,17 @@ For each component or boundary, walk through the six STRIDE categories. Skip cat
 
 Risks that exist but the team has consciously accepted, with reasoning.
 
-| Risk | Why accepted | Re-review date |
-|---|---|---|
-| `TODO` | `TODO` | `TODO` |
+| Risk   | Why accepted | Re-review date |
+|--------|--------------|----------------|
+| `TODO` | `TODO`       | `TODO`         |
 
 ---
 
 ## 6. Open questions
 
-| Question | Owner | Needed by |
-|---|---|---|
-| `TODO` | `TODO` | `TODO` |
+| Question | Owner  | Needed by |
+|----------|--------|-----------|
+| `TODO`   | `TODO` | `TODO`    |
 
 ---
 
