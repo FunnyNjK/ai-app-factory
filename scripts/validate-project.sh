@@ -74,7 +74,7 @@ done
 
 # --- 2. Unfilled placeholders ---------------------------------------------
 
-printf '\n[2] Unfilled placeholders (in persona/planning files)\n'
+printf '\n[2] Unfilled scaffold placeholders (in persona/planning files)\n'
 
 # Files we lint. .gitignore is intentionally not lint'd — placeholder-like
 # tokens there would be path globs, not unfilled values.
@@ -89,35 +89,26 @@ PLACEHOLDER_TARGETS=(
   "SECURITY.md"
 )
 
-# Tokens that are intentionally documentation-only and should NOT be flagged
-# as unfilled placeholders. Add to this list when you find new docs-only
-# placeholder tokens.
-DOC_PLACEHOLDER_TOKENS=(
-  "<placeholder>"
-  "<slice-name>"
-  "<slice-id>"
-  "<phase-name>"
-  "<what-this-phase-delivers>"
-  "<number-or-default>"
-  "<short>"
-  "<short summary>"
-  "<short reason>"
-  "<short list>"
-  "<one-line evidence summary>"
-  "<one-line reason>"
-  "<one-line summary of what you implemented>"
-  "<one-line summary of what you did>"
-  "<short>"
+# Scaffold tokens that scripts/scaffold-new-project.sh fills in at scaffold
+# time. If any of these remain in a persona or planning file, the scaffold
+# step was incomplete. Keep in sync with the sed replacements in
+# scripts/scaffold-new-project.sh.
+#
+# This is a WHITELIST (only these tokens fail validation). HTML tags
+# (`<title>`, `<meta>`, `<head>`, `<script>`), URL patterns (`<branch>`),
+# ADR naming examples (`<title>` in 00XX-<title>.md), and other
+# documentation-only `<...>` tokens pass through unchanged because they are
+# not scaffold tokens.
+SCAFFOLD_PLACEHOLDERS=(
+  "<project-name>"
+  "<blueprint-name>"
+  "<blueprint>"
+  "<factory-path>"
+  "<one-line-goal>"
+  "<primary-users>"
+  "<date-or-none>"
+  "<who>"
 )
-
-# Build a grep-friendly pattern (escape <, >).
-strip_doc_placeholders() {
-  local content="$1"
-  for tok in "${DOC_PLACEHOLDER_TOKENS[@]}"; do
-    content=$(printf '%s' "$content" | sed "s|$tok||g")
-  done
-  printf '%s' "$content"
-}
 
 for f in "${PLACEHOLDER_TARGETS[@]}"; do
   [ -f "$f" ] || continue
@@ -128,16 +119,15 @@ for f in "${PLACEHOLDER_TARGETS[@]}"; do
     !in_fence { print }
   ' "$f")
 
-  # Strip known doc-only placeholders.
-  stripped=$(strip_doc_placeholders "$raw_content")
-
-  # Find remaining <something> patterns (must start with a letter/digit, hyphen-tolerant).
-  found=$(printf '%s' "$stripped" | grep -nE '<[A-Za-z][A-Za-z0-9_-]*>' || true)
+  # grep -F with multiple -e args searches for any of the scaffold tokens as
+  # fixed strings (no regex interpretation). Each token must appear
+  # literally — `<who>` will not match `<whoever>` or `<whodunit>`.
+  found=$(printf '%s' "$raw_content" | grep -nF "${SCAFFOLD_PLACEHOLDERS[@]/#/-e}" 2>/dev/null || true)
   if [ -n "$found" ]; then
-    fail "$f has unfilled placeholders:"
+    fail "$f has unfilled scaffold placeholders:"
     printf '%s\n' "$found" | sed 's/^/        /'
   else
-    pass "$f has no unfilled placeholders"
+    pass "$f has no unfilled scaffold placeholders"
   fi
 done
 
@@ -201,14 +191,18 @@ printf '\n[5] Secrets in tracked files\n'
 # Run only if we are inside a git worktree.
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   # Look for files git is tracking (or about to track) that match the
-  # sensitive pattern from the orchestrator's lib.sh.
+  # sensitive pattern from the orchestrator's lib.sh, then exclude known-safe
+  # placeholder files. `.env.example`, `.env.sample`, and `.env.template`
+  # are the canonical safe forms — they hold placeholder values only and
+  # are committed on purpose so contributors know which variables exist.
   sensitive_re='(^|/)(\.env(\..+)?|\.envrc|\.netrc|\.npmrc|\.pypirc|\.pgpass|\.kube/config|credentials(\.json)?|secrets?(\.ya?ml|\.json|\.env)?|.*\.pem|.*\.key|.*\.p12|.*\.pfx|.*\.crt|.*\.cer|id_rsa|id_dsa|id_ecdsa|id_ed25519|.*\.sqlite3?|.*\.db|.*\.mdb|.*\.dump|.*\.bak)$'
-  bad=$(git ls-files | grep -E "$sensitive_re" || true)
+  safe_placeholder_re='(^|/)\.env\.(example|sample|template)$'
+  bad=$(git ls-files | grep -E "$sensitive_re" | grep -vE "$safe_placeholder_re" || true)
   if [ -n "$bad" ]; then
     fail "tracked files match sensitive pattern (review and gitignore):"
     printf '%s\n' "$bad" | sed 's/^/        /'
   else
-    pass "no tracked files match sensitive pattern"
+    pass "no tracked files match sensitive pattern (.env.example excluded)"
   fi
 else
   note "not inside a git worktree; skipping secret scan"
