@@ -27,6 +27,7 @@ This repository contains a starter operating system for an AI-assisted app deliv
 | `scripts/scaffold-new-project.sh` | Scaffolds a new factory project — copies the skeleton + starter templates, replaces placeholders, optionally git-inits. Backs the new-project slash command and the `spawn-new-project` skill. |
 | `scripts/check-cli-tools.sh` | Preflight check for the three headless CLIs (`claude`, `codex`, `agent`) the orchestrator depends on. Reports presence, version, and whether auth env vars are set. |
 | `scripts/validate-project.sh` | Lints a spawned project — required files, unfilled placeholders, TASKS.md and ESCALATIONS.md structure, sensitive-path scan. |
+| `scripts/factory-status.sh` | Quick factory health check — git state, CLI tool presence, ADR/blueprint/standard counts, validator pass/fail. Run before starting a new project. |
 
 ## Orchestrator (Stage 2 of the gating model)
 
@@ -176,6 +177,7 @@ The starter folder structure copied into a new project folder by the new-project
 |---|---|
 | `docs/playbooks/first-project-walkthrough.md` | Worked Intake Mode conversation showing how to turn a one-sentence idea into an approved project brief. |
 | `docs/playbooks/escalation-trail-example.md` | Worked example of the architect escalation protocol firing: Codex flags an issue, architect amends via ADR. |
+| `docs/playbooks/running-a-project.md` | End-to-end runbook: shell setup, scaffold, intake/design, manual step-by-step gating loop OR autonomous orchestrate.sh. Codex sandbox guidance. |
 
 ## Examples
 

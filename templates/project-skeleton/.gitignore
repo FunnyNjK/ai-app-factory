@@ -8,6 +8,12 @@ build/
 .vercel/
 .output/
 
+# Framework-specific build caches
+.astro/
+.svelte-kit/
+.nuxt/
+.cache/
+
 # Test output
 coverage/
 playwright-report/
@@ -17,6 +23,9 @@ test-results/
 .env
 .env.local
 .env.*.local
+
+# Factory orchestrator logs (per-run, ephemeral)
+.factory-logs/
 
 # Editor and OS metadata
 .vscode/

@@ -23,17 +23,38 @@ See [docs/adr/0008-per-slice-and-per-phase-gating.md](../../docs/adr/0008-per-sl
   - **Cursor CLI** — `curl https://cursor.com/install -fsS | bash`. Auth: `agent login` or `CURSOR_API_KEY`.
 - The project to be orchestrated must contain a project TASKS.md and ESCALATIONS.md (from `templates/project-skeleton/`) plus ARCHITECTURE.md, CLAUDE.md, AGENTS.md, `<project>/.cursor/rules/developer.mdc`, and CURSOR_HANDOFF.md.
 
-After cloning the factory, make the scripts executable:
+After cloning the factory, make the scripts executable (the git index tracks the bit so future clones inherit it):
 
 ```bash
 chmod +x scripts/orchestrator/*.sh scripts/*.sh
 ```
 
+### Recommended shell setup
+
+Add the factory to your `PATH` so the orchestrator and adapters work by name from any project folder:
+
+```bash
+# In ~/.bashrc
+export FACTORY_PATH=/path/to/ai-app-factory
+export PATH="$PATH:$FACTORY_PATH/scripts:$FACTORY_PATH/scripts/orchestrator"
+```
+
+After this, instead of `bash /long/path/scripts/orchestrator/orchestrate.sh`, just call the scripts by name:
+
+```bash
+orchestrate.sh
+cursor-slice.sh 1.1
+```
+
+Prefix with `RUN_PHASE_NO_PUSH=1` (or `export` it in your session) when you want commits to stay local for the first runs.
+
 Confirm the three CLIs are installed and authenticated before the first run:
 
 ```bash
-scripts/check-cli-tools.sh
+check-cli-tools.sh
 ```
+
+For the end-to-end playbook (scaffold → intake → design → loop → release), see `docs/playbooks/running-a-project.md`.
 
 ## Usage
 
@@ -102,16 +123,44 @@ The orchestrator decides what to do next based on the adapter's exit code, not t
 
 These come from [docs/research/headless-cli/run-phase-lib.sh](../../docs/research/headless-cli/run-phase-lib.sh), adapted into `lib.sh`. The research scripts are kept under `docs/research/` for reference.
 
-## Untested end-to-end
+## Codex sandbox: localhost binding is blocked by default
 
-The orchestrator has not yet been validated against a real AI session. The product owner plans to run two test projects through it to validate the workflow. After those runs, expect adjustments to:
+The OpenAI Codex CLI runs each session in a sandbox that — by default — blocks localhost binding. This is the most common surprise during a Phase 2+ slice review where Codex wants to start a server (Astro dev, SWA CLI, Functions host on :7071) and `curl -I` against it.
 
-- Prompt wording (whatever the AI tools consistently misread or skip).
-- Budget cap defaults in [docs/adr/0008-per-slice-and-per-phase-gating.md](../../docs/adr/0008-per-slice-and-per-phase-gating.md).
-- Status-line contract (if any tool refuses to emit it reliably).
-- Per-tool CLI flag sets (the research notes these change month-to-month).
+Two ways to handle it:
 
-Real failures will reveal what to harden. Treat this version as a v0.
+### Option 1 — Loosen the Codex sandbox
+
+```bash
+export RUN_PHASE_CODEX_APPROVAL_FLAG="--sandbox danger-full-access"
+```
+
+The exact flag name varies by Codex CLI version. Verify with `codex exec --help | grep -i sandbox`. Common names: `--sandbox danger-full-access`, `--full-auto`. The factory adapter passes whatever you set via `RUN_PHASE_CODEX_APPROVAL_FLAG` straight through.
+
+This is the right call for **factory testing on a trusted machine**. The factory's orchestration model already grants AI agents file write access; the sandbox restriction on localhost binding is over-correction inside the gating loop.
+
+### Option 2 — Let Codex improvise
+
+If you keep the sandbox tight, Codex falls back to:
+
+- Config-level verification (parsing config files and asserting expected values)
+- Schema validation (against the framework's JSON schema)
+- **Module-level instrumentation** — importing the framework's own middleware and calling it with fake req/res to capture behavior
+
+The first test project's slice 1.3 review was approved this way: Codex imported SWA CLI's `getStorageContent()` and asserted that the configured headers were applied to a `/` request. Creative but less direct than `curl -I` against a live server.
+
+For real production projects where every slice's behavior matters, prefer Option 1.
+
+## Validation history
+
+Validated end-to-end against the first test project (a marketing-site blueprint, May 2026):
+
+- Loop completed Phase 1: slice 1.1 (clean), slice 1.2 (one sub-task round → approved), slice 1.3 (clean).
+- `factory_increment_iterations` correctly advanced the counter on `sub-tasks-filed` and left it alone on `approved`.
+- Adapter status-line contract held across two AI tools (Cursor, Codex). Claude phase review uses the same contract.
+- Two real lib.sh bugs caught and fixed during the run: safe-stage regex matched `.env.example` falsely; `rpl_extract_subject` picked the prompt's example text instead of the AI's actual completion. Both fixed; the parser now skips fenced code blocks and prefers the last `Work completed:` line.
+
+Expect future adjustments as more project types stress the loop. Budget cap defaults in `docs/adr/0008-per-slice-and-per-phase-gating.md` should be revisited once observed cost-per-slice data accumulates.
 
 ## Debugging an adapter in isolation
 

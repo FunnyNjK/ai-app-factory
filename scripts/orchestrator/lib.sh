@@ -102,6 +102,11 @@ rpl_extract_subject() {
   local log_file="$1"
   local fallback="$2"
   local subject
+  # Take the LAST "Work completed:" line in the log, not the first. The
+  # adapter prompts contain example "Work completed:" lines for the AI to
+  # follow; those appear early in the log (as the prompt is tee'd in)
+  # while the AI's actual completion line is at the end. Last-match-wins
+  # picks the AI's real answer.
   subject=$(awk '
     /Work completed/ {
       line = $0
@@ -110,11 +115,17 @@ rpl_extract_subject() {
       sub(/^[[:space:]]*[-][[:space:]]*/, "", line)
       sub(/^Work completed[[:space:]]*/, "", line)
       sub(/^[^[:alnum:]]+[[:space:]]*/, "", line)
-      if (length(line) > 0) { print line; exit }
-      inheader = 1; next
+      if (length(line) > 0) { subject = line; inheader = 0; next }
+      inheader = 1
+      next
     }
     inheader && /^[[:space:]]*$/ { next }
-    inheader { sub(/^[*-][[:space:]]*/, ""); print; exit }
+    inheader {
+      sub(/^[*-][[:space:]]*/, "")
+      subject = $0
+      inheader = 0
+    }
+    END { if (length(subject) > 0) print subject }
   ' "$log_file" 2>/dev/null \
   | sed 's/`//g; s/\*\*//g' \
   | cut -c1-72 || true)
@@ -311,10 +322,16 @@ rpl_require_tool() {
 # an adapter's stdout log.
 # Usage: STATUS_JSON=$(factory_extract_status_line "$LOG_DIR/handoff.log")
 # Returns empty string if no status line found.
+#
+# Uses `grep -a` because adapter logs occasionally contain non-text bytes
+# (ANSI escape codes, crash-reporter output, headless-browser stderr).
+# Without -a, grep reports "Binary file matches" instead of the matched
+# line and the extraction silently returns empty — see test-marketing-site
+# slice 2.1 review for the bug that motivated this fix.
 # ---------------------------------------------------------------------------
 factory_extract_status_line() {
   local log_file="$1"
-  grep -E '^FACTORY_STATUS=' "$log_file" | tail -n 1 | sed 's/^FACTORY_STATUS=//' || true
+  grep -aE '^FACTORY_STATUS=' "$log_file" | tail -n 1 | sed 's/^FACTORY_STATUS=//' || true
 }
 
 # ---------------------------------------------------------------------------
