@@ -129,6 +129,11 @@ rpl_extract_subject() {
 # ---------------------------------------------------------------------------
 RPL_SENSITIVE_PATTERNS_DEFAULT='((^|/)(\.env(\..+)?|\.envrc|\.netrc|\.npmrc|\.pypirc|\.pgpass|\.my\.cnf|\.kube/config|kubeconfig|credentials(\.json)?|secrets?(\.ya?ml|\.json|\.env)?|.*\.pem|.*\.key|.*\.p12|.*\.pfx|.*\.jks|.*\.keystore|.*\.crt|.*\.cer|id_rsa|id_dsa|id_ecdsa|id_ed25519|.*\.sqlite3?|.*\.db|.*\.mdb|.*\.dump|.*\.bak)$)|((^|/)(\.aws|\.azure|\.gcp|\.config/gcloud|\.ssh|\.gnupg)/)'
 
+# Files that LOOK sensitive (match the pattern above) but are canonical
+# safe placeholders that should be committed. These contain placeholder
+# values only, by convention. Override via RPL_SAFE_PLACEHOLDER_PATTERNS.
+RPL_SAFE_PLACEHOLDER_PATTERNS_DEFAULT='(^|/)\.env\.(example|sample|template)$'
+
 rpl_session_changed_paths() {
   local rec records=() i=0 n code path skip_next=0
   while IFS= read -r -d '' rec; do
@@ -160,6 +165,7 @@ rpl_session_changed_paths() {
 
 rpl_safe_stage() {
   local sensitive_re="${RPL_SENSITIVE_PATTERNS:-$RPL_SENSITIVE_PATTERNS_DEFAULT}"
+  local safe_placeholder_re="${RPL_SAFE_PLACEHOLDER_PATTERNS:-$RPL_SAFE_PLACEHOLDER_PATTERNS_DEFAULT}"
   local allow_re="${RUN_PHASE_ALLOWLIST_REGEX:-}"
   local force_unsafe="${RUN_PHASE_FORCE_UNSAFE:-0}"
 
@@ -178,6 +184,13 @@ rpl_safe_stage() {
 
   for p in "${all_paths[@]}"; do
     if printf '%s' "$p" | grep -Eq "$sensitive_re"; then
+      # A path that looks sensitive may still be a canonical safe
+      # placeholder (.env.example, .env.sample, .env.template). Those are
+      # by-convention safe to commit.
+      if printf '%s' "$p" | grep -Eq "$safe_placeholder_re"; then
+        to_stage+=("$p")
+        continue
+      fi
       suspicious+=("$p")
       continue
     fi
