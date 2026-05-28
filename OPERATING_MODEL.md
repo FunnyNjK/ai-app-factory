@@ -413,7 +413,7 @@ The factory has captured:
 
 Start with:
 
-**Marketing site with contact form, Postmark email, and Azure Static Web Apps hosting**
+### Marketing site with contact form, Postmark email, and Azure Static Web Apps hosting
 
 Why:
 

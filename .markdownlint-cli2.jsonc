@@ -3,8 +3,19 @@
   "config": {
     "default": true,
     "MD013": false,
+    // Role files (CLAUDE.md, AGENTS.md, .cursor/rules/*, prompts/*) use the
+    // `# N. Section` convention with multiple top-level headings. This is the
+    // factory's house style; the single-H1 rule does not apply.
+    "MD025": false,
+    // Allow same heading text under different parents (e.g. "Responsibilities"
+    // under each agent in OPERATING_MODEL.md, "Success" under different ADRs).
+    "MD024": { "siblings_only": true },
     "MD033": false,
-    "MD041": false
+    "MD041": false,
+    // Table-pipe alignment is purely cosmetic; tables render correctly
+    // regardless. Auto-fix does not handle this rule, so we'd be hand-padding
+    // pipes — not worth the maintenance.
+    "MD060": false
   },
   "globs": [
     "**/*.md",
