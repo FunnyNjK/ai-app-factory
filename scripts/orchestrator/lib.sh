@@ -349,18 +349,28 @@ factory_extract_status_line() {
 #   2. Slice with status awaiting-review        → codex slice <N.M>
 #   3. Slice with status in-progress + sub-tasks → cursor slice <N.M>
 #   4. Lowest-numbered pending slice            → cursor slice <N.M>
+#   5. Every phase review approved + SIGNOFF.md pristine → orchestrator gate-d-signoff -
 # ---------------------------------------------------------------------------
 factory_next_action() {
   local tasks_file="${1:-TASKS.md}"
+  local signoff_file="${2:-}"
+  if [ -z "$signoff_file" ]; then
+    signoff_file="$(dirname -- "$tasks_file")/SIGNOFF.md"
+  fi
   if [ ! -f "$tasks_file" ]; then
     printf 'none none none\n'
     return
   fi
-  python3 - "$tasks_file" <<'PYEOF'
+  local signoff_state="missing"
+  if [ -f "$signoff_file" ]; then
+    signoff_state=$(factory_signoff_state "$signoff_file")
+  fi
+  python3 - "$tasks_file" "$signoff_state" <<'PYEOF'
 import re
 import sys
 
 TASKS_FILE = sys.argv[1]
+SIGNOFF_STATE = sys.argv[2] if len(sys.argv) > 2 else "missing"
 with open(TASKS_FILE, "r", encoding="utf-8") as f:
     raw = f.read()
 
@@ -422,6 +432,15 @@ for kind, ident, status in parsed:
     if kind == "slice" and status == "pending":
         print(f"cursor slice {ident}")
         sys.exit(0)
+# Priority 5: Gate D. Every phase review approved and SIGNOFF.md still in its
+# pristine template state (no agent has signed) -> run the Gate D sign-off
+# adapter. Once an agent has signed, SIGNOFF_STATE is no longer "pristine" and
+# this does not fire again; the orchestrator's end-game handles the rest.
+phase_reviews = [(k, i, s) for (k, i, s) in parsed if k == "phase-review"]
+all_phases_approved = bool(phase_reviews) and all(s == "approved" for _, _, s in phase_reviews)
+if all_phases_approved and SIGNOFF_STATE == "pristine":
+    print("orchestrator gate-d-signoff -")
+    sys.exit(0)
 print("none none none")
 PYEOF
 }
@@ -655,5 +674,125 @@ with open(FILE, "w", encoding="utf-8") as f:
     f.write(new_text)
 
 print(esc_id)
+PYEOF
+}
+
+# ---------------------------------------------------------------------------
+# factory_all_phases_approved — exit 0 if TASKS.md has at least one
+# "### Phase N review" entry AND every one of them has Status: approved.
+# Exit 1 otherwise (including when there are no phase-review entries at all).
+# Fenced code blocks are stripped so example headings do not count.
+# Args: $1 tasks_file (default TASKS.md)
+# ---------------------------------------------------------------------------
+factory_all_phases_approved() {
+  local tasks_file="${1:-TASKS.md}"
+  [ -f "$tasks_file" ] || return 1
+  python3 - "$tasks_file" <<'PYEOF'
+import re
+import sys
+
+with open(sys.argv[1], "r", encoding="utf-8") as f:
+    raw = f.read()
+
+def strip_code_blocks(text):
+    out = []
+    in_fence = False
+    for line in text.split("\n"):
+        if line.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if not in_fence:
+            out.append(line)
+    return "\n".join(out)
+
+text = strip_code_blocks(raw)
+heading_re = re.compile(r"^###\s", re.MULTILINE)
+phase_review_re = re.compile(r"^###\s+Phase\s+(\d+)\s+review\b", re.MULTILINE | re.IGNORECASE)
+status_re = re.compile(r"^-\s+Status:\s+`?([a-z\-]+)`?", re.MULTILINE | re.IGNORECASE)
+
+heads = [m.start() for m in heading_re.finditer(text)]
+
+def body_after(pos):
+    nxt = min([h for h in heads if h > pos], default=len(text))
+    return text[pos:nxt]
+
+reviews = list(phase_review_re.finditer(text))
+if not reviews:
+    sys.exit(1)
+for m in reviews:
+    sm = status_re.search(body_after(m.start()))
+    status = sm.group(1).lower() if sm else "pending"
+    if status != "approved":
+        sys.exit(1)
+sys.exit(0)
+PYEOF
+}
+
+# ---------------------------------------------------------------------------
+# factory_signoff_state — classify a project's SIGNOFF.md by how many of the
+# four Gate D sign-off sections are filled. Prints one of:
+#   missing       — no SIGNOFF.md file
+#   pristine      — unchanged template; no party has signed
+#   agents-signed — architect + developer + QE filled, product owner not
+#   complete      — all four sections filled
+#   partial       — some other combination (e.g. a sub-session failed midway)
+# A section counts as "filled" only when its date placeholder (YYYY-MM-DD) is
+# gone AND its Decision line no longer shows the pipe-delimited option list.
+# Args: $1 signoff_file (default SIGNOFF.md). Always exits 0.
+# ---------------------------------------------------------------------------
+factory_signoff_state() {
+  local signoff_file="${1:-SIGNOFF.md}"
+  if [ ! -f "$signoff_file" ]; then
+    printf 'missing\n'
+    return 0
+  fi
+  python3 - "$signoff_file" <<'PYEOF'
+import re
+import sys
+
+with open(sys.argv[1], "r", encoding="utf-8") as fh:
+    text = fh.read().replace("\r\n", "\n")
+
+lines = text.split("\n")
+sections = [
+    ("architect", r"^##\s+Architect \(Claude\) sign-off\s*$"),
+    ("developer", r"^##\s+Developer \(Cursor\) sign-off\s*$"),
+    ("codex", r"^##\s+Quality Engineer \(Codex\) sign-off\s*$"),
+    ("po", r"^##\s+Product owner / technical owner sign-off\s*$"),
+]
+
+def section_body(start):
+    end = len(lines)
+    for j in range(start + 1, len(lines)):
+        if re.match(r"^##\s", lines[j]):
+            end = j
+            break
+    return "\n".join(lines[start:end])
+
+filled = {}
+for name, pat in sections:
+    rx = re.compile(pat, re.IGNORECASE)
+    start = next((i for i, ln in enumerate(lines) if rx.match(ln)), None)
+    if start is None:
+        filled[name] = False
+        continue
+    body = section_body(start)
+    unfilled = ("YYYY-MM-DD" in body) or bool(
+        re.search(r"^\*\*Decision:\*\*.*\|", body, re.MULTILINE)
+    )
+    if name == "po" and "name (product owner)" in body:
+        unfilled = True
+    filled[name] = not unfilled
+
+agents = [filled["architect"], filled["developer"], filled["codex"]]
+po = filled["po"]
+if not any(agents) and not po:
+    print("pristine")
+elif all(agents) and po:
+    print("complete")
+elif all(agents) and not po:
+    print("agents-signed")
+else:
+    print("partial")
 PYEOF
 }

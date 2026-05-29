@@ -12,6 +12,7 @@ See [docs/adr/0008-per-slice-and-per-phase-gating.md](../../docs/adr/0008-per-sl
 | `cursor-slice.sh` | Adapter — one slice implementation via Cursor CLI (`agent`). |
 | `codex-slice-review.sh` | Adapter — one slice review via Codex CLI (`codex exec`). |
 | `claude-phase-review.sh` | Adapter — one phase review via Claude Code CLI (`claude`). |
+| `gate-d-signoff.sh` | Adapter — Gate D four-party sign-off ceremony via three sub-sessions (`claude`, `codex exec`, `agent`). |
 | `lib.sh` | Shared safety + TASKS.md helpers. Sourced by every script. |
 
 ## Prerequisites
@@ -72,8 +73,8 @@ Or with an explicit project path:
 
 The orchestrator runs to one of three terminal states:
 
-- **Exit 0** — every slice and phase review is `approved`. Project done.
-- **Exit 2** — human intervention needed (iteration cap hit, escalation, ambiguous decision). Read `ESCALATIONS.md` to find the open items, address them, edit `TASKS.md` to clear `human-needed` or `blocked` statuses, then re-invoke the orchestrator.
+- **Exit 0** — every slice and phase review is `approved` and `SIGNOFF.md` carries all four Gate D sign-offs. Project done.
+- **Exit 2** — human intervention needed (iteration cap hit, escalation, ambiguous decision, or the Gate D product-owner sign-off). Read `ESCALATIONS.md` to find the open items, address them, edit `TASKS.md` to clear `human-needed` or `blocked` statuses (or complete the product-owner section of `SIGNOFF.md`), then re-invoke the orchestrator.
 - **Exit 1** — unrecoverable error (adapter failure, push failure, missing required file).
 
 ## Env vars
@@ -113,6 +114,12 @@ Every adapter writes a final line to stdout of the form:
 - `error` — adapter could not complete; orchestrator halts with exit 1.
 
 The orchestrator decides what to do next based on the adapter's exit code, not the JSON contents. The JSON is for observability and downstream tooling.
+
+## Gate D sign-off
+
+When every phase review is `approved` and `SIGNOFF.md` is still the unfilled template, `factory_next_action` returns `orchestrator gate-d-signoff -` and the orchestrator dispatches `gate-d-signoff.sh`. That adapter runs three headless sub-sessions in order — Claude (architect), Codex (quality engineer), Cursor (developer) — and each writes its own section of `SIGNOFF.md`, referencing the artifacts it reviewed. The fourth, product-owner sign-off is left to a human: the adapter writes a `judgment-call` entry to `ESCALATIONS.md` and exits 2.
+
+After a human completes the product-owner section, re-run the orchestrator; it detects all four sign-offs and exits 0. The `factory_signoff_state` helper in `lib.sh` classifies `SIGNOFF.md` as `pristine`, `agents-signed`, `complete`, or `partial` to drive this. See [docs/adr/0010-gate-d-signoff-adapter.md](../../docs/adr/0010-gate-d-signoff-adapter.md) for the design.
 
 ## Safety inherited from the prior research
 
@@ -171,6 +178,7 @@ cd /path/to/project
 /path/to/ai-app-factory/scripts/orchestrator/cursor-slice.sh 1.2
 /path/to/ai-app-factory/scripts/orchestrator/codex-slice-review.sh 1.2
 /path/to/ai-app-factory/scripts/orchestrator/claude-phase-review.sh 1
+/path/to/ai-app-factory/scripts/orchestrator/gate-d-signoff.sh
 ```
 
 Logs land under `<project>/.factory-logs/<adapter>_<timestamp>/work.log`. The orchestrator's own logs are under `<project>/.factory-logs/orchestrate_<timestamp>/`.

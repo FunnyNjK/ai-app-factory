@@ -39,6 +39,7 @@ Bash scripts that autonomously drive the per-slice (Cursor ↔ Codex) and per-ph
 | `scripts/orchestrator/cursor-slice.sh` | Adapter — one slice implementation via Cursor CLI. |
 | `scripts/orchestrator/codex-slice-review.sh` | Adapter — one slice review via Codex CLI. |
 | `scripts/orchestrator/claude-phase-review.sh` | Adapter — one phase review via Claude Code CLI. |
+| `scripts/orchestrator/gate-d-signoff.sh` | Adapter — Gate D four-party sign-off ceremony (three agent sub-sessions fill SIGNOFF.md; product-owner sign-off escalated). |
 | `scripts/orchestrator/lib.sh` | Shared safety + task-tracker helpers. Sourced by every script. |
 | `scripts/orchestrator/README.md` | Usage, env vars, status-line contract, debugging. |
 | `docs/research/headless-cli/run-phase.sh` | Reference — original Claude harness from prior project. |
@@ -170,6 +171,7 @@ The starter folder structure copied into a new project folder by the new-project
 | `docs/adr/0007-default-database-postgres-then-sql-then-cosmos.md` | PostgreSQL is the default relational store, with Azure SQL and Cosmos DB as fallbacks. |
 | `docs/adr/0008-per-slice-and-per-phase-gating.md` | Per-slice (Cursor↔Codex) and per-phase (Codex→Claude) gating model with budget caps and ESCALATIONS.md. |
 | `docs/adr/0009-autonomous-orchestrator.md` | Bash orchestrator design — per-role adapters, shared safety lib, status-line contract, budget enforcement. |
+| `docs/adr/0010-gate-d-signoff-adapter.md` | Gate D sign-off adapter — three agent sub-sessions fill SIGNOFF.md; product-owner sign-off escalated to a human. |
 
 ## Playbooks
 

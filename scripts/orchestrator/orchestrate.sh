@@ -85,27 +85,56 @@ while true; do
     "$OUTER_ITER" "$ROLE" "$KIND" "$ID"
 
   if [ "$ROLE" = "none" ]; then
+    # No actionable slice or phase review remains. Resolve the Gate D end-game:
+    # depending on how much of SIGNOFF.md is filled, the run is done, waiting on
+    # the human product-owner sign-off, or only partially signed.
+    if factory_all_phases_approved TASKS.md && [ -f SIGNOFF.md ]; then
+      SIGNOFF_STATE=$(factory_signoff_state SIGNOFF.md)
+      case "$SIGNOFF_STATE" in
+        complete)
+          log "Gate D: all four sign-offs present in SIGNOFF.md. Project is release-ready."
+          exit 0
+          ;;
+        agents-signed)
+          log "Gate D: three agent sign-offs complete; product-owner sign-off required."
+          log "Complete the product-owner section in SIGNOFF.md (see ESCALATIONS.md), then re-run."
+          exit 2
+          ;;
+        partial)
+          err "Gate D: SIGNOFF.md is only partially signed — a sign-off sub-session did not complete."
+          err "Inspect SIGNOFF.md and .factory-logs/, re-run gate-d-signoff.sh, or finish the sign-offs by hand."
+          exit 2
+          ;;
+        *)
+          log "All slices and phase reviews are approved. Orchestrator done."
+          exit 0
+          ;;
+      esac
+    fi
     log "All slices and phase reviews are approved. Orchestrator done."
     exit 0
   fi
 
-  # Check iteration cap BEFORE invoking the adapter.
-  set +e
-  factory_check_iteration_cap TASKS.md "$KIND" "$ID"
-  cap_rc=$?
-  set -e
-  if [ "$cap_rc" -eq 2 ]; then
-    err "halt: iteration cap reached for $KIND $ID. Writing escalation and stopping."
-    factory_log_escalation \
-      ESCALATIONS.md \
-      "orchestrator" \
-      "$KIND $ID" \
-      "iteration-cap-hit" \
-      "Iteration counter reached the cap defined in TASKS.md before this attempt." \
-      "Previous attempts logged in .factory-logs/. See per-adapter logs for details." \
-      "Review the slice/phase, decide whether to extend the cap, rescope the work, or pivot." \
-      >>"$ORCH_LOG_DIR/escalations.log"
-    exit 2
+  # Check iteration cap BEFORE invoking the adapter. Orchestrator-level actions
+  # (e.g. gate-d-signoff) carry no iteration counter, so skip the check for them.
+  if [ "$ROLE" != "orchestrator" ]; then
+    set +e
+    factory_check_iteration_cap TASKS.md "$KIND" "$ID"
+    cap_rc=$?
+    set -e
+    if [ "$cap_rc" -eq 2 ]; then
+      err "halt: iteration cap reached for $KIND $ID. Writing escalation and stopping."
+      factory_log_escalation \
+        ESCALATIONS.md \
+        "orchestrator" \
+        "$KIND $ID" \
+        "iteration-cap-hit" \
+        "Iteration counter reached the cap defined in TASKS.md before this attempt." \
+        "Previous attempts logged in .factory-logs/. See per-adapter logs for details." \
+        "Review the slice/phase, decide whether to extend the cap, rescope the work, or pivot." \
+        >>"$ORCH_LOG_DIR/escalations.log"
+      exit 2
+    fi
   fi
 
   # Dispatch.
@@ -118,6 +147,9 @@ while true; do
       ;;
     claude-phase-review)
       ADAPTER="$SCRIPT_DIR/claude-phase-review.sh"
+      ;;
+    orchestrator-gate-d-signoff)
+      ADAPTER="$SCRIPT_DIR/gate-d-signoff.sh"
       ;;
     *)
       err "halt: unknown role/kind combination: $ROLE / $KIND"
