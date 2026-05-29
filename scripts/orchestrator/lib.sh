@@ -344,12 +344,16 @@ factory_extract_status_line() {
 #   id    = slice number (e.g. 1.2) or phase number (e.g. 1)
 # If no actionable item, prints "none none none".
 #
-# Priority (matches templates/project-skeleton/.claude/commands/next-slice.md):
+# Priority order (Owner-aware for in-progress/pending slices):
 #   1. Phase review with status awaiting-review → claude phase-review <N>
-#   2. Slice with status awaiting-review        → codex slice <N.M>
-#   3. Slice with status in-progress + sub-tasks → cursor slice <N.M>
-#   4. Lowest-numbered pending slice            → cursor slice <N.M>
+#   2. Slice with status awaiting-review        → codex slice <N.M>  (review)
+#   3. Slice in-progress → its Owner (codex|claude|cursor; default cursor)
+#   4. Lowest-numbered pending slice → its Owner (codex|claude|cursor; default cursor)
 #   5. Every phase review approved + SIGNOFF.md pristine → orchestrator gate-d-signoff -
+#
+# Owner routing for kinds 3-4: codex → "codex slice-verify", claude →
+# "claude slice-design", cursor/unset → "cursor slice". awaiting-review (kind 2)
+# always goes to Codex review regardless of Owner.
 # ---------------------------------------------------------------------------
 factory_next_action() {
   local tasks_file="${1:-TASKS.md}"
@@ -394,6 +398,7 @@ text = strip_code_blocks(raw)
 slice_pat = re.compile(r"^###\s+(\d+\.\d+)\b", re.MULTILINE)
 phase_review_pat = re.compile(r"^###\s+Phase\s+(\d+)\s+review\b", re.MULTILINE | re.IGNORECASE)
 status_pat = re.compile(r"^-\s+Status:\s+`?([a-z\-]+)`?", re.MULTILINE | re.IGNORECASE)
+owner_pat = re.compile(r"^-\s+Owner:\s*`?([a-zA-Z\-]+)`?", re.MULTILINE | re.IGNORECASE)
 
 # Find every heading position
 items = []  # list of (line_start, kind, id)
@@ -403,40 +408,55 @@ for m in phase_review_pat.finditer(text):
     items.append((m.start(), "phase-review", m.group(1)))
 items.sort(key=lambda t: t[0])
 
-# For each heading, read the first status line in its body (before the next heading)
+# For each heading, read the first Status (and, for slices, Owner) line in its
+# body (before the next heading).
 parsed = []
 for i, (pos, kind, ident) in enumerate(items):
     body_end = items[i+1][0] if i + 1 < len(items) else len(text)
     body = text[pos:body_end]
     sm = status_pat.search(body)
     status = sm.group(1).lower() if sm else "pending"
-    parsed.append((kind, ident, status))
+    om = owner_pat.search(body)
+    owner = om.group(1).lower() if om else ""
+    parsed.append((kind, ident, status, owner))
 
-# Priority 1: phase-review awaiting-review
-for kind, ident, status in parsed:
+
+def route_owner(owner):
+    # Owner-aware routing for slices that are pending or in-progress.
+    if owner == "codex":
+        return "codex slice-verify"
+    if owner == "claude":
+        return "claude slice-design"
+    if owner not in ("cursor", ""):
+        sys.stderr.write(f"factory_next_action: unrecognized Owner '{owner}'; routing to cursor.\n")
+    return "cursor slice"
+
+
+# Priority 1: phase-review awaiting-review -> Claude reviews the phase.
+for kind, ident, status, owner in parsed:
     if kind == "phase-review" and status == "awaiting-review":
         print(f"claude phase-review {ident}")
         sys.exit(0)
-# Priority 2: slice awaiting-review
-for kind, ident, status in parsed:
+# Priority 2: slice awaiting-review -> Codex reviews it (always, ignoring Owner).
+for kind, ident, status, owner in parsed:
     if kind == "slice" and status == "awaiting-review":
         print(f"codex slice {ident}")
         sys.exit(0)
-# Priority 3: slice in-progress (Cursor either started it or is fixing sub-tasks)
-for kind, ident, status in parsed:
+# Priority 3: slice in-progress -> its Owner (default cursor).
+for kind, ident, status, owner in parsed:
     if kind == "slice" and status == "in-progress":
-        print(f"cursor slice {ident}")
+        print(f"{route_owner(owner)} {ident}")
         sys.exit(0)
-# Priority 4: lowest-numbered pending slice
-for kind, ident, status in parsed:
+# Priority 4: lowest-numbered pending slice -> its Owner (default cursor).
+for kind, ident, status, owner in parsed:
     if kind == "slice" and status == "pending":
-        print(f"cursor slice {ident}")
+        print(f"{route_owner(owner)} {ident}")
         sys.exit(0)
 # Priority 5: Gate D. Every phase review approved and SIGNOFF.md still in its
 # pristine template state (no agent has signed) -> run the Gate D sign-off
 # adapter. Once an agent has signed, SIGNOFF_STATE is no longer "pristine" and
 # this does not fire again; the orchestrator's end-game handles the rest.
-phase_reviews = [(k, i, s) for (k, i, s) in parsed if k == "phase-review"]
+phase_reviews = [(k, i, s) for (k, i, s, o) in parsed if k == "phase-review"]
 all_phases_approved = bool(phase_reviews) and all(s == "approved" for _, _, s in phase_reviews)
 if all_phases_approved and SIGNOFF_STATE == "pristine":
     print("orchestrator gate-d-signoff -")

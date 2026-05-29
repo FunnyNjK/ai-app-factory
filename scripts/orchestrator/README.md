@@ -11,7 +11,9 @@ See [docs/adr/0008-per-slice-and-per-phase-gating.md](../../docs/adr/0008-per-sl
 | `orchestrate.sh` | Top-level loop. Reads `TASKS.md`, picks next action, dispatches, loops. |
 | `cursor-slice.sh` | Adapter — one slice implementation via Cursor CLI (`agent`). |
 | `codex-slice-review.sh` | Adapter — one slice review via Codex CLI (`codex exec`). |
+| `codex-slice-verify.sh` | Adapter — one verification slice via Codex CLI (`codex exec`), for Owner: codex slices. |
 | `claude-phase-review.sh` | Adapter — one phase review via Claude Code CLI (`claude`). |
+| `claude-slice-design.sh` | Adapter — one design slice via Claude Code CLI (`claude`), for Owner: claude slices. |
 | `gate-d-signoff.sh` | Adapter — Gate D four-party sign-off ceremony via three sub-sessions (`claude`, `codex exec`, `agent`). |
 | `lib.sh` | Shared safety + TASKS.md helpers. Sourced by every script. |
 
@@ -109,8 +111,12 @@ Every adapter writes a final line to stdout of the form:
 
 - `implementation-complete` — Cursor finished a slice; marked `awaiting-review` in `TASKS.md`.
 - `approved` — Codex (slice) or Claude (phase) approved.
+- `verification-complete` — Codex verified an Owner: codex slice and marked it `approved`.
+- `design-complete` — Claude designed an Owner: claude slice and marked it `awaiting-review`.
 - `sub-tasks-filed` — Codex or Claude added sub-tasks under the slice/phase; orchestrator increments the iteration counter.
+- `signed` — an agent recorded its Gate D sign-off in `SIGNOFF.md` (a gate-d-signoff sub-session).
 - `escalated` — adapter wrote to `ESCALATIONS.md`; orchestrator halts with exit 2.
+- `human-needed` — gate-d-signoff recorded the three agent sign-offs; the product-owner sign-off is still required; orchestrator halts with exit 2.
 - `error` — adapter could not complete; orchestrator halts with exit 1.
 
 The orchestrator decides what to do next based on the adapter's exit code, not the JSON contents. The JSON is for observability and downstream tooling.
