@@ -136,6 +136,12 @@ print(2)')
   fi
 fi
 
+# Resolve any escalations open against this phase now that it is approved.
+# The change rides in the same commit as the phase-review approval below.
+if [ "$STATUS_FIELD" = "approved" ]; then
+  factory_resolve_escalations_for_slice "." "$PHASE_ID"
+fi
+
 SUBJECT=$(rpl_extract_subject "$LOG_DIR/work.log" "Claude phase ${PHASE_ID} review")
 set +e
 rpl_commit_and_push "$SUBJECT" "$LOG_DIR/work.log"

@@ -998,3 +998,182 @@ factory_set_phase_review_awaiting() {
   fi
   return 0
 }
+
+# ---------------------------------------------------------------------------
+# factory_resolve_escalations_for_slice — move any OPEN escalations in a
+# project's ESCALATIONS.md whose Phase/Slice matches the given id from the
+# "## Open" section to the "## Resolved" section, flipping Status to resolved
+# and appending a "- Resolved: <date> — ..." line. Idempotent: only OPEN
+# entries are scanned, so a second call is a no-op (the file is left untouched
+# when nothing matches). A slice id (contains a dot, e.g. 3.4) matches the
+# slice token; a bare phase number (e.g. 3) matches "phase" entries only.
+# Args: $1 project_path (dir containing ESCALATIONS.md), $2 id
+# Always returns 0 (resolution is best-effort).
+# ---------------------------------------------------------------------------
+factory_resolve_escalations_for_slice() {
+  local project_path="$1" id="$2"
+  local esc_file="$project_path/ESCALATIONS.md"
+  [ -f "$esc_file" ] || return 0
+  python3 - "$esc_file" "$id" <<'PYEOF'
+import re
+import sys
+from datetime import datetime
+
+
+def main():
+    esc_file, ident = sys.argv[1], sys.argv[2]
+    today = datetime.now().strftime("%Y-%m-%d")
+    is_slice = "." in ident
+
+    with open(esc_file, "r", encoding="utf-8") as f:
+        text = f.read()
+    nl = "\r\n" if "\r\n" in text else "\n"
+    lines = text.replace("\r\n", "\n").split("\n")
+
+    def find_h2(rx_str, start=0):
+        rx = re.compile(rx_str)
+        for i in range(start, len(lines)):
+            if rx.match(lines[i]):
+                return i
+        return -1
+
+    open_idx = find_h2(r"^##\s+Open\b")
+    resolved_idx = find_h2(r"^##\s+Resolved\b")
+    if open_idx == -1 or resolved_idx == -1 or resolved_idx <= open_idx:
+        return  # structure not as expected; leave the file untouched
+
+    after_resolved_idx = len(lines)
+    for i in range(resolved_idx + 1, len(lines)):
+        if re.match(r"^##\s", lines[i]):
+            after_resolved_idx = i
+            break
+
+    head = lines[:open_idx + 1]
+    open_body = lines[open_idx + 1:resolved_idx]
+    resolved_heading = lines[resolved_idx]
+    resolved_body = lines[resolved_idx + 1:after_resolved_idx]
+    tail = lines[after_resolved_idx:]
+
+    def parse_blocks(body):
+        blocks, i, n = [], 0, len(body)
+        while i < n:
+            if re.match(r"^###\s+ESC-", body[i]):
+                blk = [body[i]]
+                j = i + 1
+                while (j < n and not re.match(r"^###\s", body[j])
+                       and not re.match(r"^##\s", body[j])
+                       and body[j].strip() != "---"):
+                    blk.append(body[j])
+                    j += 1
+                while blk and blk[-1].strip() == "":
+                    blk.pop()
+                blocks.append(blk)
+                i = j
+            else:
+                i += 1
+        return blocks
+
+    def field(blk, label):
+        rx = re.compile(r"^-\s+" + re.escape(label) + r":\s*(.*)$")
+        for line in blk:
+            m = rx.match(line)
+            if m:
+                return m.group(1).strip()
+        return None
+
+    def matches(value):
+        if not value:
+            return False
+        token = re.search(r"(?<!\d)" + re.escape(ident) + r"(?!\d)", value)
+        if is_slice:
+            return token is not None
+        return ("phase" in value.lower()) and token is not None
+
+    open_blocks = parse_blocks(open_body)
+    resolved_blocks = parse_blocks(resolved_body)
+
+    kept, newly_resolved = [], []
+    kind = "slice" if is_slice else "phase"
+    for blk in open_blocks:
+        status = field(blk, "Status")
+        if matches(field(blk, "Phase/Slice")) and status and status.lower() == "open":
+            nb = []
+            for line in blk:
+                if re.match(r"^-\s+Status:\s*open\s*$", line, re.IGNORECASE):
+                    line = "- Status: resolved"
+                nb.append(line)
+            nb.append(f"- Resolved: {today} — {kind} {ident} now approved")
+            newly_resolved.append(nb)
+        else:
+            kept.append(blk)
+
+    if not newly_resolved:
+        return  # nothing matched; leave the file untouched (idempotent)
+
+    all_resolved = resolved_blocks + newly_resolved
+
+    out = list(head) + [""]
+    for k, blk in enumerate(kept):
+        if k:
+            out.append("")
+        out.extend(blk)
+    out += ["", resolved_heading, ""]
+    if all_resolved:
+        for k, blk in enumerate(all_resolved):
+            if k:
+                out.append("")
+            out.extend(blk)
+    else:
+        out.append("(No resolved escalations yet.)")
+    out.append("")
+    out.extend(tail)
+
+    # Collapse runs of blank lines and trim to a single trailing newline.
+    final, prev_blank = [], False
+    for line in out:
+        blank = (line.strip() == "")
+        if blank and prev_blank:
+            continue
+        final.append(line)
+        prev_blank = blank
+    while final and final[-1].strip() == "":
+        final.pop()
+
+    with open(esc_file, "w", encoding="utf-8", newline="") as f:
+        f.write(nl.join(final) + nl)
+
+
+try:
+    main()
+except Exception as exc:  # never let escalation cleanup break the run
+    sys.stderr.write(f"factory_resolve_escalations_for_slice: skipped ({exc})\n")
+sys.exit(0)
+PYEOF
+}
+
+# ---------------------------------------------------------------------------
+# factory_phase_numbers — print the distinct phase numbers that have a
+# "### Phase N review" entry in TASKS.md, one per line in document order.
+# Fenced code blocks are stripped. Args: $1 tasks_file (default TASKS.md)
+# ---------------------------------------------------------------------------
+factory_phase_numbers() {
+  local tasks_file="${1:-TASKS.md}"
+  [ -f "$tasks_file" ] || return 0
+  python3 - "$tasks_file" <<'PYEOF'
+import re
+import sys
+
+seen = []
+in_fence = False
+for line in open(sys.argv[1], encoding="utf-8"):
+    if line.startswith("```"):
+        in_fence = not in_fence
+        continue
+    if in_fence:
+        continue
+    m = re.match(r"^###\s+Phase\s+(\d+)\s+review\b", line, re.IGNORECASE)
+    if m and m.group(1) not in seen:
+        seen.append(m.group(1))
+print("\n".join(seen))
+PYEOF
+}

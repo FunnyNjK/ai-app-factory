@@ -184,6 +184,12 @@ cursor_rc=$?
 set -e
 [ "$cursor_rc" -ne 0 ] && err "Cursor sign-off session exited rc=$cursor_rc (continuing; final state is checked below)."
 
+# Safety net: resolve any escalations still open against now-approved phases.
+# Slice-level escalations were already resolved at slice approval.
+while IFS= read -r _phase; do
+  [ -n "$_phase" ] && factory_resolve_escalations_for_slice "." "$_phase"
+done < <(factory_phase_numbers TASKS.md)
+
 # --- Classify the result and escalate the product-owner sign-off ----------
 
 STATE=$(factory_signoff_state SIGNOFF.md)

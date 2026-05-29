@@ -139,6 +139,8 @@ fi
 # and the change rides in the same commit as Codex's slice approval below.
 if [ "$STATUS_FIELD" = "approved" ]; then
   PHASE_NUM="${SLICE_ID%%.*}"
+  # Resolve any escalations that were open against this slice now that it is approved.
+  factory_resolve_escalations_for_slice "." "$SLICE_ID"
   if factory_is_last_slice_in_phase TASKS.md "$SLICE_ID"; then
     log "Slice $SLICE_ID is the last approved slice in Phase $PHASE_NUM; setting Phase $PHASE_NUM review to awaiting-review."
     factory_set_phase_review_awaiting TASKS.md "$PHASE_NUM"
