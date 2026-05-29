@@ -64,7 +64,7 @@ Steps:
 
 7. Do NOT commit changes — the orchestrator commits.
 
-Do not review slices other than ${SLICE_ID}. Do not modify code. Code-level changes are Cursor's responsibility. Do not edit the phase review entry — the orchestrator sets the phase review to awaiting-review automatically once every slice in the phase is approved.
+Do not review slices other than ${SLICE_ID}. Do not modify code. Code-level changes are Cursor's responsibility. Do not edit the phase review entry — the orchestrator sets the phase review to awaiting-review automatically once every slice in the phase is approved. Inspect source files only — do not grep, cat, or read files inside node_modules/, .factory-logs/, dist/, or build/.
 PROMPT_EOF
 )
 
@@ -105,6 +105,9 @@ fi
 log "Adapter status: $STATUS_LINE"
 
 STATUS_FIELD=$(printf '%s' "$STATUS_LINE" | python3 -c 'import sys, json; print(json.loads(sys.stdin.read()).get("status",""))')
+
+# Drop node_modules/ noise from the saved log now that the status line is parsed.
+factory_strip_log_noise "$LOG_DIR/work.log"
 
 # If sub-tasks were filed, increment the iteration counter against the cap from TASKS.md header.
 if [ "$STATUS_FIELD" = "sub-tasks-filed" ]; then

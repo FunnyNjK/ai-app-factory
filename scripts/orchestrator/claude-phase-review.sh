@@ -69,7 +69,7 @@ Steps:
 
 6. Do NOT commit changes — the orchestrator commits.
 
-Do not file slice-level code bugs. Those belong to Codex's slice review. If you find a code-level bug that slipped past Codex, mention it in your phase review notes but do not file it as a sub-task here — surface it as a Codex-process concern in ESCALATIONS.md instead.
+Do not file slice-level code bugs. Those belong to Codex's slice review. If you find a code-level bug that slipped past Codex, mention it in your phase review notes but do not file it as a sub-task here — surface it as a Codex-process concern in ESCALATIONS.md instead. Inspect source files only — do not grep, cat, or read files inside node_modules/, .factory-logs/, dist/, or build/.
 PROMPT_EOF
 )
 
@@ -109,6 +109,9 @@ fi
 log "Adapter status: $STATUS_LINE"
 
 STATUS_FIELD=$(printf '%s' "$STATUS_LINE" | python3 -c 'import sys, json; print(json.loads(sys.stdin.read()).get("status",""))')
+
+# Drop node_modules/ noise from the saved log now that the status line is parsed.
+factory_strip_log_noise "$LOG_DIR/work.log"
 
 # If phase-level sub-tasks were filed, increment the phase-review iteration counter.
 if [ "$STATUS_FIELD" = "sub-tasks-filed" ]; then

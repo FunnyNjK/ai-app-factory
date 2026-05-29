@@ -53,7 +53,7 @@ If you cannot proceed (missing secret, ambiguous requirement, architecture confl
    Work completed: escalated — <one-line reason>
    FACTORY_STATUS={"role":"cursor","action":"slice","slice":"${SLICE_ID}","status":"escalated","details":"<short reason>"}
 
-Do not modify slices other than ${SLICE_ID}. Do not start a different slice. Do not commit.
+Do not modify slices other than ${SLICE_ID}. Do not start a different slice. Do not commit. Inspect source files only — do not grep, cat, or read files inside node_modules/, .factory-logs/, dist/, or build/.
 PROMPT_EOF
 )
 
@@ -90,6 +90,9 @@ fi
 log "Adapter status: $STATUS_LINE"
 
 STATUS_FIELD=$(printf '%s' "$STATUS_LINE" | python3 -c 'import sys, json; print(json.loads(sys.stdin.read()).get("status",""))')
+
+# Drop node_modules/ noise from the saved log now that the status line is parsed.
+factory_strip_log_noise "$LOG_DIR/work.log"
 
 SUBJECT=$(rpl_extract_subject "$LOG_DIR/work.log" "Cursor slice ${SLICE_ID}")
 set +e

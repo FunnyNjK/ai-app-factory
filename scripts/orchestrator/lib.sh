@@ -1177,3 +1177,24 @@ for line in open(sys.argv[1], encoding="utf-8"):
 print("\n".join(seen))
 PYEOF
 }
+
+# ---------------------------------------------------------------------------
+# factory_strip_log_noise — drop lines that reference node_modules/ from an
+# on-disk adapter log. A deep grep through node_modules/ (e.g. iconv-lite CJK
+# encoding tables) can bloat a work.log to multiple MB of useless noise. Call
+# this only AFTER the FACTORY_STATUS line and the commit subject have been
+# parsed from the log, never on the live stream. Best-effort; uses grep -a so
+# binary-tagged logs are handled. Args: $1 log_file. Always returns 0.
+# ---------------------------------------------------------------------------
+factory_strip_log_noise() {
+  local log_file="$1"
+  [ -f "$log_file" ] || return 0
+  local tmp="${log_file}.stripped"
+  grep -av 'node_modules/' "$log_file" >"$tmp" 2>/dev/null || true
+  if [ -s "$tmp" ]; then
+    mv -f "$tmp" "$log_file"
+  else
+    rm -f "$tmp"
+  fi
+  return 0
+}

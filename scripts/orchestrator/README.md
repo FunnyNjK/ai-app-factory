@@ -183,6 +183,8 @@ cd /path/to/project
 
 Logs land under `<project>/.factory-logs/<adapter>_<timestamp>/work.log`. The orchestrator's own logs are under `<project>/.factory-logs/orchestrate_<timestamp>/`.
 
+Adapter prompts forbid reading `node_modules/` and other transient build directories (`dist/`, `build/`, `.factory-logs/`), and `factory_strip_log_noise` drops any remaining `node_modules/` lines from the saved log after the status line is parsed — so a stray deep grep cannot bloat a work log to multiple MB.
+
 ## Adding a new adapter
 
 If you add a Gemini or Copilot adapter in the future:
