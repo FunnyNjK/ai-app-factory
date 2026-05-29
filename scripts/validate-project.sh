@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scripts/validate-project.sh — lint a spawned factory project for common
+# scripts/validate-project.sh -lint a spawned factory project for common
 # setup issues. Mirrors validate-factory.mjs but targets per-project state.
 #
 # Checks:
@@ -76,7 +76,7 @@ done
 
 printf '\n[2] Unfilled scaffold placeholders (in persona/planning files)\n'
 
-# Files we lint. .gitignore is intentionally not lint'd — placeholder-like
+# Files we lint. .gitignore is intentionally not lint'd -placeholder-like
 # tokens there would be path globs, not unfilled values.
 PLACEHOLDER_TARGETS=(
   "CLAUDE.md"
@@ -121,7 +121,7 @@ for f in "${PLACEHOLDER_TARGETS[@]}"; do
 
   # grep -F with multiple -e args searches for any of the scaffold tokens as
   # fixed strings (no regex interpretation). Each token must appear
-  # literally — `<who>` will not match `<whoever>` or `<whodunit>`.
+  # literally -`<who>` will not match `<whoever>` or `<whodunit>`.
   found=$(printf '%s' "$raw_content" | grep -nF "${SCAFFOLD_PLACEHOLDERS[@]/#/-e}" 2>/dev/null || true)
   if [ -n "$found" ]; then
     fail "$f has unfilled scaffold placeholders:"
@@ -193,7 +193,7 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   # Look for files git is tracking (or about to track) that match the
   # sensitive pattern from the orchestrator's lib.sh, then exclude known-safe
   # placeholder files. `.env.example`, `.env.sample`, and `.env.template`
-  # are the canonical safe forms — they hold placeholder values only and
+  # are the canonical safe forms -they hold placeholder values only and
   # are committed on purpose so contributors know which variables exist.
   sensitive_re='(^|/)(\.env(\..+)?|\.envrc|\.netrc|\.npmrc|\.pypirc|\.pgpass|\.kube/config|credentials(\.json)?|secrets?(\.ya?ml|\.json|\.env)?|.*\.pem|.*\.key|.*\.p12|.*\.pfx|.*\.crt|.*\.cer|id_rsa|id_dsa|id_ecdsa|id_ed25519|.*\.sqlite3?|.*\.db|.*\.mdb|.*\.dump|.*\.bak)$'
   safe_placeholder_re='(^|/)\.env\.(example|sample|template)$'
@@ -207,6 +207,150 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 else
   note "not inside a git worktree; skipping secret scan"
 fi
+
+# --- 6. Lifecycle consistency (Gate D sign-off, escalations, phase reviews) -
+#
+# These cross-reference TASKS.md, SIGNOFF.md, and ESCALATIONS.md to catch the
+# manual-intervention mistakes the first end-to-end run produced: an unfilled
+# SIGNOFF.md after all phases approved, escalations left open against approved
+# work, and a phase-review Status that disagrees with its own Notes. Reports
+# only - the human fixes the mismatch.
+
+printf '\n[6] Lifecycle consistency\n'
+
+set +e
+LIFECYCLE_OUT=$(python3 - <<'PYEOF'
+import os
+import re
+import sys
+
+fails = 0
+
+
+def emit_fail(msg):
+    global fails
+    fails += 1
+    print(f"FAIL  {msg}")
+
+
+def emit_pass(msg):
+    print(f"pass  {msg}")
+
+
+def strip_code_blocks(text):
+    out = []
+    in_fence = False
+    for line in text.split("\n"):
+        if line.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if not in_fence:
+            out.append(line)
+    return "\n".join(out)
+
+
+tasks = ""
+if os.path.exists("TASKS.md"):
+    with open("TASKS.md", encoding="utf-8") as f:
+        tasks = strip_code_blocks(f.read())
+
+status_re = re.compile(r"^-\s+Status:\s+`?([a-z\-]+)`?", re.MULTILINE | re.IGNORECASE)
+notes_re = re.compile(r"^-\s+Notes:\s*(.*)$", re.MULTILINE | re.IGNORECASE)
+all_heads = [m.start() for m in re.finditer(r"^###\s", tasks, re.MULTILINE)]
+
+
+def body(pos):
+    nxt = min([h for h in all_heads if h > pos], default=len(tasks))
+    return tasks[pos:nxt]
+
+
+parsed = []  # (kind, id, status, notes)
+for m in re.finditer(r"^###\s+(\d+\.\d+)\b", tasks, re.MULTILINE):
+    b = body(m.start())
+    sm, nm = status_re.search(b), notes_re.search(b)
+    parsed.append(("slice", m.group(1), sm.group(1).lower() if sm else "pending", nm.group(1).strip() if nm else ""))
+for m in re.finditer(r"^###\s+Phase\s+(\d+)\s+review\b", tasks, re.MULTILINE | re.IGNORECASE):
+    b = body(m.start())
+    sm, nm = status_re.search(b), notes_re.search(b)
+    parsed.append(("phase-review", m.group(1), sm.group(1).lower() if sm else "pending", nm.group(1).strip() if nm else ""))
+
+phase_reviews = [(i, s, n) for (k, i, s, n) in parsed if k == "phase-review"]
+slice_status = {i: s for (k, i, s, n) in parsed if k == "slice"}
+phase_status = {i: s for (k, i, s, n) in parsed if k == "phase-review"}
+
+# Check 1: SIGNOFF.md must be filled once every phase review is approved.
+all_approved = bool(phase_reviews) and all(s == "approved" for (_, s, _) in phase_reviews)
+if not all_approved:
+    emit_pass("Gate D sign-off not due (not every phase review is approved)")
+elif not os.path.exists("SIGNOFF.md"):
+    emit_fail("every phase review is approved but SIGNOFF.md is missing - run gate-d-signoff.sh")
+else:
+    with open("SIGNOFF.md", encoding="utf-8") as f:
+        sign = f.read()
+    unfilled = []
+    if "YYYY-MM-DD" in sign:
+        unfilled.append("YYYY-MM-DD date placeholder")
+    if re.search(r"^\*\*Decision:\*\*.*\|", sign, re.MULTILINE):
+        unfilled.append("unchosen Decision option-list")
+    if "name (product owner)" in sign:
+        unfilled.append("name (product owner) placeholder")
+    if unfilled:
+        emit_fail("Gate D sign-off not complete - run gate-d-signoff.sh (" + "; ".join(unfilled) + ")")
+    else:
+        emit_pass("SIGNOFF.md is fully signed (all phase reviews approved)")
+
+# Check 2: no escalation under ## Open references an already-approved item.
+esc = ""
+if os.path.exists("ESCALATIONS.md"):
+    with open("ESCALATIONS.md", encoding="utf-8") as f:
+        esc = f.read().replace("\r\n", "\n")
+open_m = re.search(r"^##\s+Open\b", esc, re.MULTILINE)
+resolved_m = re.search(r"^##\s+Resolved\b", esc, re.MULTILINE)
+open_body = ""
+if open_m:
+    end = resolved_m.start() if (resolved_m and resolved_m.start() > open_m.start()) else len(esc)
+    open_body = esc[open_m.end():end]
+stale = []
+for em in re.finditer(r"^###\s+(ESC-\d+)\b", open_body, re.MULTILINE):
+    nxt = re.search(r"^###\s", open_body[em.end():], re.MULTILINE)
+    block = open_body[em.start():em.end() + nxt.start()] if nxt else open_body[em.start():]
+    esc_id = em.group(1)
+    psm = re.search(r"^-\s+Phase/Slice:\s*(.*)$", block, re.MULTILINE)
+    ps = psm.group(1).strip() if psm else ""
+    sl = re.search(r"(?<!\d)(\d+\.\d+)(?!\d)", ps)
+    if sl and slice_status.get(sl.group(1)) == "approved":
+        stale.append(f"{esc_id} is open but slice {sl.group(1)} is approved - move it to Resolved")
+        continue
+    if not sl and "phase" in ps.lower():
+        ph = re.search(r"(?<!\d)(\d+)(?!\d)", ps)
+        if ph and phase_status.get(ph.group(1)) == "approved":
+            stale.append(f"{esc_id} is open but phase {ph.group(1)} is approved - move it to Resolved")
+if stale:
+    for s in stale:
+        emit_fail(s)
+else:
+    emit_pass("no open escalations reference an approved slice or phase")
+
+# Check 3: a phase review whose Notes read "Approved" must have Status approved.
+mismatches = []
+for (i, s, n) in phase_reviews:
+    note = n.lstrip("-* ").strip()
+    looks_approved = note.startswith("Approved") or re.search(r"Approved\s+\d{4}-\d{2}-\d{2}", n)
+    if looks_approved and s != "approved":
+        mismatches.append(f"Phase {i} review Status/Notes mismatch - Notes say approved but Status is `{s}`")
+if mismatches:
+    for msg in mismatches:
+        emit_fail(msg)
+else:
+    emit_pass("phase-review Status matches Notes")
+
+sys.exit(fails)
+PYEOF
+)
+lifecycle_rc=$?
+set -e
+printf '%s\n' "$LIFECYCLE_OUT"
+ERRORS=$((ERRORS + lifecycle_rc))
 
 # --- Summary --------------------------------------------------------------
 
