@@ -137,7 +137,7 @@ The adapter runs Codex headless against the slice's checks. Codex either:
 - **Files sub-tasks** → marks the slice `in-progress` again, adds sub-tasks under it in `TASKS.md`, increments the iteration counter. Re-run `cursor-slice.sh 1.1` and Cursor reads the sub-tasks and fixes only those. Then `codex-slice-review.sh 1.1` again.
 - **Escalates** → writes to `ESCALATIONS.md`, marks the slice `human-needed`. You resolve and either resume or re-scope.
 
-After all slices in the phase are `approved`, `TASKS.md` shows the Phase review entry transitioning to `awaiting-review` (Codex does this when it approves the last slice).
+After all slices in the phase are `approved`, `TASKS.md` shows the Phase review entry transitioning to `awaiting-review` (the Codex review adapter flips it deterministically when it approves the last slice in the phase).
 
 ```bash
 # Claude reviews the phase as a whole

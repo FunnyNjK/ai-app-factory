@@ -64,7 +64,7 @@ Steps:
 
 7. Do NOT commit changes — the orchestrator commits.
 
-Do not review slices other than ${SLICE_ID}. Do not modify code. Code-level changes are Cursor's responsibility.
+Do not review slices other than ${SLICE_ID}. Do not modify code. Code-level changes are Cursor's responsibility. Do not edit the phase review entry — the orchestrator sets the phase review to awaiting-review automatically once every slice in the phase is approved.
 PROMPT_EOF
 )
 
@@ -130,6 +130,18 @@ print(3)')
     SUBJECT=$(rpl_extract_subject "$LOG_DIR/work.log" "Codex review slice ${SLICE_ID} (cap hit)")
     rpl_commit_and_push "$SUBJECT" "$LOG_DIR/work.log" || true
     exit 2
+  fi
+fi
+
+# When this approval makes every slice in the phase approved, deterministically
+# flip the phase review to awaiting-review so the orchestrator routes it to
+# Claude. The adapter owns this transition (it is no longer left to the prompt),
+# and the change rides in the same commit as Codex's slice approval below.
+if [ "$STATUS_FIELD" = "approved" ]; then
+  PHASE_NUM="${SLICE_ID%%.*}"
+  if factory_is_last_slice_in_phase TASKS.md "$SLICE_ID"; then
+    log "Slice $SLICE_ID is the last approved slice in Phase $PHASE_NUM; setting Phase $PHASE_NUM review to awaiting-review."
+    factory_set_phase_review_awaiting TASKS.md "$PHASE_NUM"
   fi
 fi
 

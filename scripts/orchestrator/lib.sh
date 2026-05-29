@@ -930,3 +930,71 @@ factory_advance_main() {
     >>"$log_dir/advance_main.log" 2>/dev/null || true
   return 1
 }
+
+# ---------------------------------------------------------------------------
+# factory_is_last_slice_in_phase — exit 0 if EVERY slice in the same phase as
+# the given slice id is approved (i.e. this approval completes the phase),
+# exit 1 otherwise. The phase is the part of the id before the dot (3.4 -> 3).
+# Fenced code blocks are stripped so example slices do not count.
+# Args: $1 tasks_file, $2 slice_id (e.g. 3.4)
+# ---------------------------------------------------------------------------
+factory_is_last_slice_in_phase() {
+  local tasks_file="$1" slice_id="$2"
+  python3 - "$tasks_file" "$slice_id" <<'PYEOF'
+import re
+import sys
+
+TASKS_FILE, SLICE = sys.argv[1:3]
+phase = SLICE.split(".")[0]
+with open(TASKS_FILE, "r", encoding="utf-8") as f:
+    raw = f.read()
+
+def strip_code_blocks(text):
+    out = []
+    in_fence = False
+    for line in text.split("\n"):
+        if line.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if not in_fence:
+            out.append(line)
+    return "\n".join(out)
+
+text = strip_code_blocks(raw)
+slice_re = re.compile(r"^###\s+(\d+)\.(\d+)\b", re.MULTILINE)
+status_re = re.compile(r"^-\s+Status:\s+`?([a-z\-]+)`?", re.MULTILINE | re.IGNORECASE)
+heading_re = re.compile(r"^###\s", re.MULTILINE)
+heads = [m.start() for m in heading_re.finditer(text)]
+
+def body_after(pos):
+    nxt = min([h for h in heads if h > pos], default=len(text))
+    return text[pos:nxt]
+
+slices = [m for m in slice_re.finditer(text) if m.group(1) == phase]
+if not slices:
+    sys.exit(1)
+for m in slices:
+    sm = status_re.search(body_after(m.start()))
+    status = sm.group(1).lower() if sm else "pending"
+    if status != "approved":
+        sys.exit(1)
+sys.exit(0)
+PYEOF
+}
+
+# ---------------------------------------------------------------------------
+# factory_set_phase_review_awaiting — set the "### Phase N review" Status to
+# awaiting-review, but ONLY when it is currently pending (so an already
+# approved / in-progress / human-needed review is never downgraded). No-op and
+# success if the review is in any other state or absent. Idempotent.
+# Args: $1 tasks_file, $2 phase number
+# ---------------------------------------------------------------------------
+factory_set_phase_review_awaiting() {
+  local tasks_file="$1" phase="$2"
+  local cur
+  cur=$(factory_item_status "$tasks_file" phase-review "$phase")
+  if [ "$cur" = "pending" ]; then
+    factory_update_status "$tasks_file" phase-review "$phase" "awaiting-review"
+  fi
+  return 0
+}
