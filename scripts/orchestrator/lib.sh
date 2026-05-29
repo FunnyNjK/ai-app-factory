@@ -796,3 +796,137 @@ else:
     print("partial")
 PYEOF
 }
+
+# ---------------------------------------------------------------------------
+# factory_item_status — print the Status value of one slice or phase-review
+# from TASKS.md (lowercased, no backticks). Prints empty string if not found.
+# Fenced code blocks are stripped so example headings do not match.
+# Args: $1 tasks_file, $2 kind (slice|phase-review), $3 id
+# ---------------------------------------------------------------------------
+factory_item_status() {
+  local tasks_file="$1" kind="$2" id="$3"
+  python3 - "$tasks_file" "$kind" "$id" <<'PYEOF'
+import re
+import sys
+
+TASKS_FILE, KIND, IDENT = sys.argv[1:4]
+with open(TASKS_FILE, "r", encoding="utf-8") as f:
+    raw = f.read()
+
+def strip_code_blocks(text):
+    out = []
+    in_fence = False
+    for line in text.split("\n"):
+        if line.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if not in_fence:
+            out.append(line)
+    return "\n".join(out)
+
+text = strip_code_blocks(raw)
+if KIND == "slice":
+    heading_re = re.compile(rf"^###\s+{re.escape(IDENT)}\b")
+elif KIND == "phase-review":
+    heading_re = re.compile(rf"^###\s+Phase\s+{re.escape(IDENT)}\s+review\b", re.IGNORECASE)
+else:
+    print("")
+    sys.exit(0)
+
+status_re = re.compile(r"^-\s+Status:\s+`?([a-z\-]+)`?", re.IGNORECASE)
+next_heading_re = re.compile(r"^###\s")
+
+in_target = False
+for line in (text + "\n").splitlines():
+    if heading_re.match(line):
+        in_target = True
+        continue
+    if in_target and next_heading_re.match(line):
+        break
+    if in_target:
+        m = status_re.match(line)
+        if m:
+            print(m.group(1).lower())
+            sys.exit(0)
+print("")
+PYEOF
+}
+
+# ---------------------------------------------------------------------------
+# _factory_push_main — best-effort push of the main branch after a fast-forward.
+# Respects RUN_PHASE_NO_PUSH and SYNC_MODE=batch; skips silently if there is no
+# 'origin' remote. A push failure is non-fatal: local main already points at
+# the final state, so warn and continue. Always returns 0.
+# ---------------------------------------------------------------------------
+_factory_push_main() {
+  if [ "${RUN_PHASE_NO_PUSH:-0}" = "1" ] || [ "${SYNC_MODE:-immediate}" = "batch" ]; then
+    log "factory_advance_main: RUN_PHASE_NO_PUSH/SYNC_MODE set — not pushing main."
+    return 0
+  fi
+  if ! git remote get-url origin >/dev/null 2>&1; then
+    log "factory_advance_main: no 'origin' remote — main advanced locally only."
+    return 0
+  fi
+  if git push origin main; then
+    log "factory_advance_main: pushed main to origin."
+  else
+    err "factory_advance_main: 'git push origin main' failed (non-fatal). origin/main is behind; push it manually when able."
+  fi
+  return 0
+}
+
+# ---------------------------------------------------------------------------
+# factory_advance_main — fast-forward the project's main branch to the current
+# branch's HEAD at a clean phase/Gate boundary, then return to the current
+# branch. Never force-pushes: if the fast-forward fails (main has diverged) it
+# writes a factory_advance_main_failed escalation and returns 1 so the caller
+# can halt.
+# Args: $1 log_dir (for the escalation log; default ".")
+# Returns: 0 advanced or already current (or safely skipped); 1 FF failed.
+# ---------------------------------------------------------------------------
+factory_advance_main() {
+  local log_dir="${1:-.}"
+  local current
+  current=$(git symbolic-ref --quiet --short HEAD || true)
+
+  if [ -z "$current" ]; then
+    err "factory_advance_main: detached HEAD; cannot advance main. Skipping."
+    return 0
+  fi
+  if [ "$current" = "main" ]; then
+    return 0
+  fi
+  # Refuse to switch branches with a dirty tree — switching could carry or lose
+  # uncommitted work. Adapters commit before returning, so this should be clean.
+  if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+    err "factory_advance_main: working tree has uncommitted tracked changes; skipping main fast-forward. Commit them and re-run to advance main."
+    return 0
+  fi
+
+  if ! git rev-parse --verify --quiet main >/dev/null 2>&1; then
+    err "factory_advance_main: no 'main' branch; creating it at the current HEAD ($current)."
+    git branch main
+    _factory_push_main
+    return 0
+  fi
+
+  log "factory_advance_main: fast-forwarding main to $current."
+  git checkout main
+  if git merge --ff-only "$current"; then
+    _factory_push_main
+    git checkout "$current"
+    log "factory_advance_main: main is now at the $current HEAD."
+    return 0
+  fi
+
+  # Fast-forward rejected — main has diverged. Do NOT force. Restore and escalate.
+  git merge --abort >/dev/null 2>&1 || true
+  git checkout "$current"
+  err "factory_advance_main: fast-forward of main from $current failed (main has diverged)."
+  factory_log_escalation ESCALATIONS.md "orchestrator" "factory_advance_main_failed" "judgment-call" \
+    "Could not fast-forward main to ${current}. main has commits that are not on ${current}, so a --ff-only merge is impossible, and the orchestrator never force-pushes." \
+    "Tried: git checkout main && git merge --ff-only ${current}; it was rejected as a non-fast-forward." \
+    "Someone pushed to main directly, or two runs diverged. Reconcile main and ${current} by hand (inspect 'git log main ^${current}'), then re-run." \
+    >>"$log_dir/advance_main.log" 2>/dev/null || true
+  return 1
+}

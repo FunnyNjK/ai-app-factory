@@ -93,6 +93,10 @@ while true; do
       case "$SIGNOFF_STATE" in
         complete)
           log "Gate D: all four sign-offs present in SIGNOFF.md. Project is release-ready."
+          if ! factory_advance_main "$ORCH_LOG_DIR"; then
+            err "halt: could not fast-forward main after the final sign-off (see ESCALATIONS.md)."
+            exit 2
+          fi
           exit 0
           ;;
         agents-signed)
@@ -166,8 +170,21 @@ while true; do
   case "$rc" in
     0)
       log "Step $OUTER_ITER: adapter completed cleanly."
+      # When a phase review just reached approved, fast-forward main to this
+      # branch's HEAD so main tracks the released state phase by phase.
+      if [ "$KIND" = "phase-review" ] && [ "$(factory_item_status TASKS.md phase-review "$ID")" = "approved" ]; then
+        if ! factory_advance_main "$ORCH_LOG_DIR"; then
+          err "halt: could not fast-forward main after Phase $ID approval (see ESCALATIONS.md)."
+          exit 2
+        fi
+      fi
       ;;
     2)
+      # gate-d-signoff ends in human-needed, but its SIGNOFF.md and escalation
+      # edits should still land on main before we halt.
+      if [ "$ROLE" = "orchestrator" ] && [ "$KIND" = "gate-d-signoff" ]; then
+        factory_advance_main "$ORCH_LOG_DIR" || err "warning: could not fast-forward main after gate-d-signoff (see ESCALATIONS.md)."
+      fi
       err "halt: adapter signaled escalation. See ESCALATIONS.md and .factory-logs/."
       exit 2
       ;;

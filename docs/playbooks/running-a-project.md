@@ -168,6 +168,17 @@ You can also point the orchestrator at a different project:
 orchestrate.sh --project /abs/path/to/other-project
 ```
 
+### Branch model and `main`
+
+Each adapter runs on its own `<tool>/phase-<timestamp>` branch (auto-created by the safety lib if the current branch does not match). Those branches chain linearly — each is created off the previous one — so the newest branch contains every prior commit.
+
+`main` is advanced by fast-forward only, never by force:
+
+- After each phase review is approved, the orchestrator fast-forwards `main` to the current branch's HEAD.
+- After the Gate D sign-off adapter runs, and again after the final all-signed run, it fast-forwards once more.
+
+So `main` always points at the latest approved state and a fresh clone gets the real project, not a transient work branch. If a fast-forward is ever rejected — meaning `main` carries commits that are not on the work branch (someone pushed to `main` directly, or two runs diverged) — the orchestrator does **not** force. It writes a `factory_advance_main_failed` escalation and halts so a human can reconcile.
+
 ---
 
 ## 5. The Codex sandbox: a real environment limitation
@@ -244,7 +255,7 @@ gate-d-signoff.sh
 
 Then close out the release:
 
-1. Complete the product-owner section of `SIGNOFF.md` (Decision, Notes, Signed) — accept any documented risks and authorize the release.
+1. Complete the product-owner section of `SIGNOFF.md` (Decision, Notes, Signed) — accept any documented risks and authorize the release — then commit it so the final fast-forward can carry it to `main`.
 2. Finalize `RELEASE_CHECKLIST.md` — any deferred items get explicit deferral notes.
 3. Run `validate-project.sh .` one more time. It checks that `SIGNOFF.md` is fully signed once every phase review is `approved`.
 4. Re-run `orchestrate.sh` one last time (autonomous mode): it detects all four sign-offs and exits 0.
