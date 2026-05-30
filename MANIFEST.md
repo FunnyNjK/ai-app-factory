@@ -27,6 +27,7 @@ This repository contains a starter operating system for an AI-assisted app deliv
 | `scripts/scaffold-new-project.sh` | Scaffolds a new factory project — copies the skeleton + starter templates, replaces placeholders, optionally git-inits. Backs the new-project slash command and the `spawn-new-project` skill. |
 | `scripts/check-cli-tools.sh` | Preflight check for the three headless CLIs (`claude`, `codex`, `agent`) the orchestrator depends on. Reports presence, version, and whether auth env vars are set. |
 | `scripts/validate-project.sh` | Lints a spawned project — required files, unfilled placeholders, TASKS.md and ESCALATIONS.md structure, sensitive-path scan. |
+| `scripts/refresh-project.sh` | Read-only drift detector — reports where a scaffolded project has fallen behind current factory conventions (TASKS.md legends, slash commands, the Gate D sign-off artifact, the version stamp). |
 | `scripts/factory-status.sh` | Quick factory health check — git state, CLI tool presence, ADR/blueprint/standard counts, validator pass/fail. Run before starting a new project. |
 
 ## Orchestrator (Stage 2 of the gating model)
@@ -75,6 +76,7 @@ Workflows Claude Code reads from `.claude/`. Slash commands are user-invoked; sk
 | `.claude/skills/create-adr/SKILL.md` | Model-invoked skill: create an ADR following the factory template. |
 | `.claude/skills/draft-handoff/SKILL.md` | Model-invoked skill: draft a Cursor or Codex handoff from an approved architecture. |
 | `.claude/skills/spawn-new-project/SKILL.md` | Model-invoked skill: scaffold a new project folder using the project skeleton. |
+| `.claude/skills/refresh-project/SKILL.md` | Model-invoked skill: bring an existing scaffolded project up to current factory conventions, preserving project content. |
 | `.claude/agents/requirements-clarifier.md` | Subagent: deep requirements clarification on a partial intake. |
 | `.claude/agents/threat-modeler.md` | Subagent: produce or review a STRIDE threat model. |
 

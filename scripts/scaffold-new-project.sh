@@ -190,6 +190,15 @@ while IFS= read -r -d '' file; do
     "$file"
 done
 
+# --- Stamp the factory baseline -------------------------------------------
+
+# Record which factory commit this project was scaffolded from, so a later
+# scripts/refresh-project.sh run can detect and reconcile convention drift.
+{
+  printf 'factory_commit: %s\n' "$(git -C "$FACTORY_PATH" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+  printf 'scaffolded: %s\n' "$(date -u +%Y-%m-%d)"
+} > "$TARGET/.factory-version"
+
 # --- Initialize git -------------------------------------------------------
 
 if [ "$DO_GIT" = "1" ]; then

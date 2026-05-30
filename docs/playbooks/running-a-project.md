@@ -271,6 +271,7 @@ Then close out the release:
 | Tool check | `check-cli-tools.sh` |
 | Scaffold | `scaffold-new-project.sh --name ... --blueprint ... --goal "..." --users "..."` |
 | Validate project | `validate-project.sh .` |
+| Refresh a project (drift check) | `refresh-project.sh <project-path>` |
 | Intake (Claude UI) | `/intake` |
 | Design (Claude UI) | `/design` |
 | Cursor handoff (Claude UI) | `/handoff-cursor` |
