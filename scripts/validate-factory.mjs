@@ -61,7 +61,6 @@ const requiredFiles = [
   "prompts/codex-quality-engineer.md",
   "prompts/cursor-developer.md",
   "scripts/orchestrator/claude-phase-review.sh",
-  "scripts/orchestrator/claude-slice-design.sh",
   "scripts/orchestrator/codex-slice-review.sh",
   "scripts/orchestrator/codex-slice-verify.sh",
   "scripts/orchestrator/cursor-slice.sh",

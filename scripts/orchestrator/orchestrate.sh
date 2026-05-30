@@ -152,9 +152,6 @@ while true; do
     codex-slice-verify)
       ADAPTER="$SCRIPT_DIR/codex-slice-verify.sh"
       ;;
-    claude-slice-design)
-      ADAPTER="$SCRIPT_DIR/claude-slice-design.sh"
-      ;;
     claude-phase-review)
       ADAPTER="$SCRIPT_DIR/claude-phase-review.sh"
       ;;

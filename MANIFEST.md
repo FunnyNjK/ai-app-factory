@@ -40,7 +40,6 @@ Bash scripts that autonomously drive the per-slice (Cursor ↔ Codex) and per-ph
 | `scripts/orchestrator/codex-slice-review.sh` | Adapter — one slice review via Codex CLI. |
 | `scripts/orchestrator/codex-slice-verify.sh` | Adapter — one verification slice via Codex CLI (Owner: codex; no separate implementer). |
 | `scripts/orchestrator/claude-phase-review.sh` | Adapter — one phase review via Claude Code CLI. |
-| `scripts/orchestrator/claude-slice-design.sh` | Adapter — one design slice via Claude Code CLI (Owner: claude; sets the slice to awaiting-review). |
 | `scripts/orchestrator/gate-d-signoff.sh` | Adapter — Gate D four-party sign-off ceremony (three agent sub-sessions fill SIGNOFF.md; product-owner sign-off escalated). |
 | `scripts/orchestrator/lib.sh` | Shared safety + task-tracker helpers. Sourced by every script. |
 | `scripts/orchestrator/README.md` | Usage, env vars, status-line contract, debugging. |

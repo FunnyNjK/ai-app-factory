@@ -347,13 +347,14 @@ factory_extract_status_line() {
 # Priority order (Owner-aware for in-progress/pending slices):
 #   1. Phase review with status awaiting-review → claude phase-review <N>
 #   2. Slice with status awaiting-review        → codex slice <N.M>  (review)
-#   3. Slice in-progress → its Owner (codex|claude|cursor; default cursor)
-#   4. Lowest-numbered pending slice → its Owner (codex|claude|cursor; default cursor)
+#   3. Slice in-progress → its Owner (codex → verify; cursor/unset → cursor)
+#   4. Lowest-numbered pending slice → its Owner (codex → verify; cursor/unset → cursor)
 #   5. Every phase review approved + SIGNOFF.md pristine → orchestrator gate-d-signoff -
 #
-# Owner routing for kinds 3-4: codex → "codex slice-verify", claude →
-# "claude slice-design", cursor/unset → "cursor slice". awaiting-review (kind 2)
-# always goes to Codex review regardless of Owner.
+# Owner routing for kinds 3-4: codex → "codex slice-verify"; cursor/unset →
+# "cursor slice". Only cursor and codex are valid slice owners — any other
+# value (e.g. claude) is treated as an architect error: warn loudly and fall
+# back to cursor. awaiting-review (kind 2) always goes to Codex review.
 # ---------------------------------------------------------------------------
 factory_next_action() {
   local tasks_file="${1:-TASKS.md}"
@@ -422,13 +423,18 @@ for i, (pos, kind, ident) in enumerate(items):
 
 
 def route_owner(owner):
-    # Owner-aware routing for slices that are pending or in-progress.
+    # Owner-aware routing for slices that are pending or in-progress. Only
+    # cursor and codex are valid slice owners; anything else (e.g. claude) is
+    # an architect mistake, not a workflow — warn loudly and fall back to cursor.
     if owner == "codex":
         return "codex slice-verify"
-    if owner == "claude":
-        return "claude slice-design"
     if owner not in ("cursor", ""):
-        sys.stderr.write(f"factory_next_action: unrecognized Owner '{owner}'; routing to cursor.\n")
+        sys.stderr.write(
+            f"factory_next_action: WARNING: Owner '{owner}' is not routable "
+            f"(only cursor and codex are valid slice owners). This usually means "
+            f"the architect set the Owner in error; falling back to cursor. Fix "
+            f"the Owner for this slice in TASKS.md.\n"
+        )
     return "cursor slice"
 
 
