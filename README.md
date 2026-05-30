@@ -36,6 +36,8 @@ This repository focuses on web development projects such as:
 - Postmark transactional email
 - CI/CD, testing, release checklists, and runbooks
 
+Not sure which shape fits your idea? `docs/choosing-a-blueprint.md` is a decision tree and complexity-tier guide that maps an idea to one of these blueprints (plus any integration overlays) before design begins.
+
 ---
 
 ## Repository structure

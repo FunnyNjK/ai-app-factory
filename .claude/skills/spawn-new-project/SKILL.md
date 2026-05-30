@@ -23,6 +23,8 @@ Ask the product owner (one at a time, per `CLAUDE.md` Section 11):
    - `plaid-app.md`
    - `postmark-email.md`
 
+   If the product owner is unsure which blueprint fits — or how complex v1 should be — walk `docs/choosing-a-blueprint.md` together first. It maps an idea to a base blueprint, any integration overlays (Stripe, Plaid, Postmark), and a starting complexity tier.
+
 ## Procedure
 
 The factory ships a script that performs every step below deterministically: `scripts/scaffold-new-project.sh`. Use the script rather than performing the steps by hand — it keeps placeholders consistent, copies the right conditional templates per blueprint, and initializes git.

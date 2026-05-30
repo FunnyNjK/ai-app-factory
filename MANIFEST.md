@@ -90,6 +90,8 @@ Portable copy-paste mirrors of the canonical instruction files above. Keep both 
 
 ## Blueprints
 
+`docs/choosing-a-blueprint.md` is the selector — a decision tree and complexity-tier guide that maps a project idea to one of these blueprints (plus any integration overlays) before design begins.
+
 | File | Purpose |
 |---|---|
 | `blueprints/marketing-site.md` | Reusable blueprint for a marketing site with contact form and Postmark. |

@@ -38,6 +38,7 @@ const requiredFiles = [
   "docs/adr/0008-per-slice-and-per-phase-gating.md",
   "docs/adr/0009-autonomous-orchestrator.md",
   "docs/adr/0010-gate-d-signoff-adapter.md",
+  "docs/choosing-a-blueprint.md",
   "docs/playbooks/escalation-trail-example.md",
   "docs/playbooks/first-project-walkthrough.md",
   "examples/sample-architecture.md",
