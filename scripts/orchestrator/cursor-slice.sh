@@ -57,7 +57,12 @@ Do not modify slices other than ${SLICE_ID}. Do not start a different slice. Do 
 PROMPT_EOF
 )
 
-CURSOR_FLAGS=(--trust --force --sandbox disabled --output-format text)
+# Cursor CLI flags. The default disables the sandbox so the agent can write files and the
+# orchestrator can commit unattended (the factory's autonomy model). Override via
+# RUN_PHASE_CURSOR_FLAGS to run Cursor under a tighter profile in shared/CI environments;
+# keep --output-format text so the FACTORY_STATUS line stays parseable.
+CURSOR_FLAGS_DEFAULT="--trust --force --sandbox disabled --output-format text"
+read -r -a CURSOR_FLAGS <<<"${RUN_PHASE_CURSOR_FLAGS:-$CURSOR_FLAGS_DEFAULT}"
 [ -n "${RUN_PHASE_CURSOR_MODEL:-}" ] && CURSOR_FLAGS+=(--model "$RUN_PHASE_CURSOR_MODEL")
 
 log "Invoking Cursor for slice $SLICE_ID (wall-time cap ${WALL_TIME}s)..."

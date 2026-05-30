@@ -179,6 +179,7 @@ The starter folder structure copied into a new project folder by the new-project
 | `docs/adr/0008-per-slice-and-per-phase-gating.md` | Per-slice (Cursor↔Codex) and per-phase (Codex→Claude) gating model with budget caps and ESCALATIONS.md. |
 | `docs/adr/0009-autonomous-orchestrator.md` | Bash orchestrator design — per-role adapters, shared safety lib, status-line contract, budget enforcement. |
 | `docs/adr/0010-gate-d-signoff-adapter.md` | Gate D sign-off adapter — three agent sub-sessions fill SIGNOFF.md; product-owner sign-off escalated to a human. |
+| `docs/adr/0011-recurring-security-review-for-sensitive-projects.md` | Proposed — a data-classification-gated security-review step in the gating loop for sensitive-data projects. |
 
 ## Playbooks
 

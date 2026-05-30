@@ -43,7 +43,11 @@ check_tool() {
   printf '  status:   present at %s\n' "$(command -v "$binary")"
 
   local version_output
-  if version_output=$(eval "$version_cmd" 2>&1); then
+  # Split the version command into argv and run it directly (no eval — avoids executing
+  # an arbitrary string if a caller ever passes tainted input).
+  local -a version_argv
+  read -r -a version_argv <<<"$version_cmd"
+  if version_output=$("${version_argv[@]}" 2>&1); then
     # Only show the first line of version output — some CLIs print a banner.
     printf '  version:  %s\n' "$(printf '%s' "$version_output" | head -n 1)"
   else

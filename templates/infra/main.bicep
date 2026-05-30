@@ -50,6 +50,13 @@ param tags object = {
 @description('Frontend allowed origin (for CORS on the Function App).')
 param allowedOrigin string
 
+@description('Key Vault data-plane network exposure. Allow (default) keeps the starter working for a Consumption Function App that reaches Key Vault over a public Azure IP. For production set this to Deny AND give the Function App network line-of-sight to Key Vault (VNet integration + private endpoint, or an explicit ipRules/virtualNetworkRules allowlist); otherwise the managed identity cannot read secrets at runtime.')
+@allowed([
+  'Allow'
+  'Deny'
+])
+param keyVaultPublicNetworkAccess string = 'Allow'
+
 // ---------------------------------------------------------------------------
 // Derived names
 // ---------------------------------------------------------------------------
@@ -242,7 +249,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     softDeleteRetentionInDays: 90
     enablePurgeProtection: env == 'prod' ? true : null
     networkAcls: {
-      defaultAction: 'Allow'
+      defaultAction: keyVaultPublicNetworkAccess
       bypass: 'AzureServices'
     }
   }
@@ -267,4 +274,5 @@ output functionAppHostName string = functionApp.properties.defaultHostName
 output staticSiteName string = staticSite.name
 output staticSiteDefaultHostname string = staticSite.properties.defaultHostname
 output keyVaultUri string = 'https://${keyVault.name}${environment().suffixes.keyvaultDns}/'
+@secure()
 output appInsightsConnectionString string = appInsights.properties.ConnectionString

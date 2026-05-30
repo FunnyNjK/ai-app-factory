@@ -20,6 +20,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Factory orchestrator logs (if the orchestrator is ever run against the factory repo itself)
+.factory-logs/
+
 # OS/editor
 .DS_Store
 .vscode/

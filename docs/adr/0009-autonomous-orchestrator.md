@@ -12,7 +12,7 @@
 
 ## Status
 
-Proposed
+Proposed (implemented and in use; pending end-to-end validation before promotion to Accepted)
 
 ## Context
 

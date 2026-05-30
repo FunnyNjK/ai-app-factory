@@ -65,7 +65,8 @@ run_session() {
   local rc=0
   case "$tool" in
     claude)
-      local flags=(--dangerously-skip-permissions)
+      local flags
+      read -r -a flags <<<"${RUN_PHASE_CLAUDE_FLAGS:---dangerously-skip-permissions}"
       [ -n "${RUN_PHASE_CLAUDE_MODEL:-}" ] && flags+=(--model "$RUN_PHASE_CLAUDE_MODEL")
       [ -n "${RUN_PHASE_CLAUDE_MAX_TURNS:-}" ] && flags+=(--max-turns "$RUN_PHASE_CLAUDE_MAX_TURNS")
       set +e
@@ -87,7 +88,8 @@ run_session() {
       set -e
       ;;
     cursor)
-      local flags=(--trust --force --sandbox disabled --output-format text)
+      local flags
+      read -r -a flags <<<"${RUN_PHASE_CURSOR_FLAGS:---trust --force --sandbox disabled --output-format text}"
       [ -n "${RUN_PHASE_CURSOR_MODEL:-}" ] && flags+=(--model "$RUN_PHASE_CURSOR_MODEL")
       set +e
       timeout "$WALL_TIME" agent -p "${flags[@]}" -- "$prompt" 2>&1 | tee "$logfile"

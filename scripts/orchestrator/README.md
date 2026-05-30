@@ -96,6 +96,8 @@ The orchestrator runs to one of three terminal states:
 | `RUN_PHASE_CURSOR_MODEL` | unset | Pin a specific Cursor model. |
 | `RUN_PHASE_CLAUDE_MAX_TURNS` | unset | Pass `--max-turns` to Claude (version-dependent). |
 | `RUN_PHASE_CODEX_APPROVAL_FLAG` | unset | Append a Codex approval-bypass flag (e.g. `--ask-for-approval=never`; name varies by version). |
+| `RUN_PHASE_CLAUDE_FLAGS` | `--dangerously-skip-permissions` | Override the Claude permission flags. Set a tighter profile (e.g. a plan/ask mode) when running in a shared or CI environment. |
+| `RUN_PHASE_CURSOR_FLAGS` | `--trust --force --sandbox disabled --output-format text` | Override the Cursor CLI flags. Keep `--output-format text` so the `FACTORY_STATUS` line stays parseable. |
 
 ## Status-line contract
 
