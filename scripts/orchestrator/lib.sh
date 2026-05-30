@@ -248,6 +248,29 @@ rpl_safe_stage() {
 }
 
 # ---------------------------------------------------------------------------
+# rpl_git_push_retry — git push with a bounded retry on transient failures
+# (network blips, brief auth refresh). Retries RUN_PHASE_PUSH_RETRIES times
+# (default 2) with linear backoff. A genuine non-fast-forward exhausts the
+# retries and still fails, which is intended (the caller halts). Args: extra
+# `git push` args (e.g. origin main). Returns the final push exit status.
+# ---------------------------------------------------------------------------
+rpl_git_push_retry() {
+  local tries="${RUN_PHASE_PUSH_RETRIES:-2}" i=0 backoff
+  while :; do
+    if git push "$@"; then
+      return 0
+    fi
+    i=$((i + 1))
+    if [ "$i" -gt "$tries" ]; then
+      return 1
+    fi
+    backoff=$((i * 5))
+    err "git push failed (attempt $i of $tries); retrying in ${backoff}s..."
+    sleep "$backoff"
+  done
+}
+
+# ---------------------------------------------------------------------------
 # rpl_commit_and_push — stage + commit + push with stop-on-push-failure.
 # Args:
 #   $1 subject       — commit subject (one line)
@@ -286,7 +309,7 @@ rpl_commit_and_push() {
   fi
 
   log "Pushing to origin..."
-  if ! git push; then
+  if ! rpl_git_push_retry; then
     err ""
     err "Push failed (commit: $subject)."
     err "Stopping orchestrator run so the local branch does not drift from origin."
@@ -893,7 +916,7 @@ _factory_push_main() {
     log "factory_advance_main: no 'origin' remote — main advanced locally only."
     return 0
   fi
-  if git push origin main; then
+  if rpl_git_push_retry origin main; then
     log "factory_advance_main: pushed main to origin."
   else
     err "factory_advance_main: 'git push origin main' failed (non-fatal). origin/main is behind; push it manually when able."

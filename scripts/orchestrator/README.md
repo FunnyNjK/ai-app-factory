@@ -86,6 +86,7 @@ The orchestrator runs to one of three terminal states:
 | `FACTORY_WALL_TIME_SEC` | `1800` | Per-adapter wall-time cap. Each adapter wraps its CLI in `timeout`. |
 | `FACTORY_TOKEN_CAP` | `100000` | Reserved; **not currently enforced**. The headless CLIs expose no universal token-cap flag, so `FACTORY_WALL_TIME_SEC` (wall-time) is the active per-session bound; Claude additionally honors `RUN_PHASE_CLAUDE_MAX_TURNS`. |
 | `RUN_PHASE_NO_PUSH` | `0` | Set to `1` to commit but skip `git push`. |
+| `RUN_PHASE_PUSH_RETRIES` | `2` | Bounded retries on a failed `git push` (transient network or auth) before halting. |
 | `RUN_PHASE_AUTO_BRANCH` | `1` | Auto-create a `<tool>/phase-<timestamp>` branch if the current branch does not match. |
 | `RUN_PHASE_ALLOW_DIRTY` | `0` | Refuse to start on a dirty worktree (override at your own risk). |
 | `RUN_PHASE_ALLOWLIST_REGEX` | unset | Extra ERE restricting which changed paths may be staged. |
@@ -128,7 +129,8 @@ After a human completes the product-owner section, re-run the orchestrator; it d
 ## Safety inherited from the prior research
 
 - **Sensitive-path refusal.** `lib.sh` will not stage `.env`, `.aws/`, `.ssh/`, `*.pem`, `*.key`, `id_rsa`, `*.sqlite3`, `credentials*`, and similar. Fail-closed; the run halts rather than commits.
-- **Push-on-failure stop.** If `git push` fails (auth, network, non-fast-forward), the orchestrator halts. No piling commits on a drifted local branch.
+- **Push-on-failure stop.** A failed `git push` is retried a bounded number of times (`RUN_PHASE_PUSH_RETRIES`, default 2) for transient blips; if it still fails (auth, non-fast-forward), the orchestrator halts. No piling commits on a drifted local branch.
+- **Single-flight lock.** `orchestrate.sh` takes a `mkdir`-based lock named `orchestrate.lock` under the project's `.factory-logs/` directory, so two runs cannot race the same project's worktree or `main`. It is released on exit; remove a stale lock from a hard kill with `rmdir`.
 - **Dirty-tree precheck.** Refuses to start with uncommitted changes unless `RUN_PHASE_ALLOW_DIRTY=1`.
 - **Auto-branch.** Each adapter checks the branch matches its expected `<tool>/*` prefix; auto-creates `<tool>/phase-<timestamp>` if not.
 

@@ -70,6 +70,19 @@ ORCH_LOG_DIR=$(rpl_init_log_dir)
 log "Orchestrator log dir: $ORCH_LOG_DIR"
 log "Project: $PROJECT_PATH"
 
+# Single-flight lock: refuse a second orchestrator run on the same project,
+# which would race the working tree and the main fast-forward. mkdir is atomic
+# and portable (Linux, macOS, Git Bash); the lock is released on any exit.
+LOCK_DIR=".factory-logs/orchestrate.lock"
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  err "halt: another orchestrator run holds $PROJECT_PATH/$LOCK_DIR (or it is stale)."
+  err "If no run is active, remove it:  rmdir '$LOCK_DIR'"
+  exit 1
+fi
+trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT
+trap 'exit 130' INT TERM
+log "Acquired single-flight lock: $LOCK_DIR"
+
 MAX_OUTER_ITER=${FACTORY_MAX_OUTER_ITER:-200}
 OUTER_ITER=0
 
