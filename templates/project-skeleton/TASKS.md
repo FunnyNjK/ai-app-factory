@@ -11,6 +11,13 @@
 - `blocked` — cannot proceed; needs human input (see `ESCALATIONS.md`)
 - `human-needed` — iteration cap hit; needs human review
 
+## Owner values
+
+- `cursor` — implementation (coding) work
+- `codex` — verification work (no separate implementer; Codex does the work itself)
+
+`Owner` is the slice's *work type*, set by the architect at design time and left unchanged through the loop — `Status` (not `Owner`) tracks runtime progress. `cursor` and `codex` are the only valid owners; any other value is an architect error and is routed to `cursor` with a warning.
+
 ## Budget caps (project overrides)
 
 | Cap | Value | Override here |
