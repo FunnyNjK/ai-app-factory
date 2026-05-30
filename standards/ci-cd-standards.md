@@ -37,6 +37,16 @@ Should run:
 
 ---
 
+## Local-first verification (do not use CI as a debug loop)
+
+Get the full local gate — lint, type check, tests, build — green BEFORE you push. CI is a confirmation gate, not a debugging tool.
+
+The anti-pattern to avoid: change, push, wait minutes for CI to fail, repeat. If a local fix-cycle is under a minute and a CI fix-cycle is several minutes, you are using the wrong loop. Reserve CI for what only CI can catch — clean-environment reproducibility, cross-platform behavior, integration against shared services — not for errors a local run surfaces in seconds.
+
+Every project's local command set must reproduce the PR pipeline's required checks, so a green local run predicts a green CI run.
+
+---
+
 ## Deployment pipeline
 
 Recommended environments:

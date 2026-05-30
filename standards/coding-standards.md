@@ -99,6 +99,14 @@ Before adding a dependency, ask:
 
 ---
 
+## Dependency versions
+
+- Pin the current stable version of each dependency, verified at build time against its canonical source (npm, PyPI, NuGet, or the vendor's release notes) — not from memory or training data, which goes stale.
+- Record the version and its source for any significant choice: an ADR for framework, runtime, and datastore choices; a lockfile entry or comment otherwise.
+- Treat the lockfile as the source of truth. When docs and the lockfile disagree, fix the docs to match the lockfile — never silently bump the lockfile to match the docs.
+
+---
+
 ## Pull request expectations
 
 Each PR should include:
