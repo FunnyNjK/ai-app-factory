@@ -37,7 +37,7 @@ Steps:
 
 1. Read CLAUDE.md, .cursor/rules/developer.mdc, ARCHITECTURE.md, CURSOR_HANDOFF.md, TASKS.md, and every docs/adr/*.md.
 2. Find slice ${SLICE_ID} in TASKS.md. Note its acceptance criteria (in ARCHITECTURE.md Work Breakdown and CURSOR_HANDOFF.md) and any Sub-tasks listed from prior Codex review.
-3. Update TASKS.md: set slice ${SLICE_ID} Status to in-progress, Owner to cursor.
+3. Update TASKS.md: set slice ${SLICE_ID} Status to in-progress. Leave the Owner field exactly as the architect set it — Owner is the slice's work type (cursor = coding), not a runtime marker, and the orchestrator owns routing. Do not change it.
 4. If sub-tasks exist for this slice: fix only those sub-tasks (focused changes, no unrelated refactors). Otherwise: implement the slice end-to-end per CURSOR_HANDOFF.md (UI, API, integration, tests, docs as scoped).
 5. Run local tests and confirm they pass. If tests do not exist yet for what you built, add them per standards/testing-standards.md.
 6. Update TASKS.md: set slice ${SLICE_ID} Status to awaiting-review. Increment the slice's Iterations counter ONLY if you were fixing sub-tasks; leave it at its current value if this was the first implementation.
