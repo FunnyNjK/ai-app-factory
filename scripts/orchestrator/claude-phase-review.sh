@@ -73,7 +73,10 @@ Do not file slice-level code bugs. Those belong to Codex's slice review. If you 
 PROMPT_EOF
 )
 
-CLAUDE_FLAGS=(--dangerously-skip-permissions)
+# Claude permission flags. The default skips permission prompts for unattended autonomy.
+# Override via RUN_PHASE_CLAUDE_FLAGS in shared/CI environments (e.g. a plan/ask profile).
+CLAUDE_FLAGS_DEFAULT="--dangerously-skip-permissions"
+read -r -a CLAUDE_FLAGS <<<"${RUN_PHASE_CLAUDE_FLAGS:-$CLAUDE_FLAGS_DEFAULT}"
 [ -n "${RUN_PHASE_CLAUDE_MODEL:-}" ] && CLAUDE_FLAGS+=(--model "$RUN_PHASE_CLAUDE_MODEL")
 if [ -n "${RUN_PHASE_CLAUDE_MAX_TURNS:-}" ]; then
   CLAUDE_FLAGS+=(--max-turns "$RUN_PHASE_CLAUDE_MAX_TURNS")

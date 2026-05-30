@@ -21,8 +21,8 @@ test-results/
 
 # Environment files (never commit real secrets)
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # Factory orchestrator logs (per-run, ephemeral)
 .factory-logs/

@@ -178,7 +178,9 @@ OPERATOR_E=$(esc "$OPERATOR")
 # Replace in every .md and .mdc file in the new project.
 find "$TARGET" -type f \( -name '*.md' -o -name '*.mdc' \) -print0 |
 while IFS= read -r -d '' file; do
-  sed -i \
+  # Portable in-place edit: GNU and BSD/macOS `sed -i` take incompatible arguments, so
+  # write to a temp file and move it back rather than relying on `sed -i`.
+  sed \
     -e "s/<project-name>/$NAME_E/g" \
     -e "s/<blueprint-name>/$BLUEPRINT_E/g" \
     -e "s/<blueprint>/$BLUEPRINT_E/g" \
@@ -187,7 +189,7 @@ while IFS= read -r -d '' file; do
     -e "s/<primary-users>/$USERS_E/g" \
     -e "s/<date-or-none>/$LAUNCH_E/g" \
     -e "s/<who>/$OPERATOR_E/g" \
-    "$file"
+    "$file" > "$file.tmp" && mv -- "$file.tmp" "$file"
 done
 
 # --- Stamp the factory baseline -------------------------------------------
