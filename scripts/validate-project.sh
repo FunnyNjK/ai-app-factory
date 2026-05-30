@@ -352,6 +352,111 @@ set -e
 printf '%s\n' "$LIFECYCLE_OUT"
 ERRORS=$((ERRORS + lifecycle_rc))
 
+# --- 7. Planning completeness (slice / phase / ADR required structure) -----
+#
+# Ports the prior project's lint-planning.py: every slice and phase review must
+# carry its required fields, and every project ADR its required sections, so the
+# work is fully specified before implementation (Gate B). Reports only.
+
+printf '\n[7] Planning completeness\n'
+
+set +e
+COMPLETENESS_OUT=$(python3 - <<'PYEOF'
+import glob
+import os
+import re
+import sys
+
+fails = 0
+
+
+def emit_fail(msg):
+    global fails
+    fails += 1
+    print(f"FAIL  {msg}")
+
+
+def emit_pass(msg):
+    print(f"pass  {msg}")
+
+
+def strip_code_blocks(text):
+    out = []
+    in_fence = False
+    for line in text.split("\n"):
+        if line.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if not in_fence:
+            out.append(line)
+    return "\n".join(out)
+
+
+tasks = ""
+if os.path.exists("TASKS.md"):
+    with open("TASKS.md", encoding="utf-8") as f:
+        tasks = strip_code_blocks(f.read())
+
+all_heads = [m.start() for m in re.finditer(r"^###\s", tasks, re.MULTILINE)]
+
+
+def body(pos):
+    nxt = min([h for h in all_heads if h > pos], default=len(tasks))
+    return tasks[pos:nxt]
+
+
+def has_field(text, label):
+    return re.search(r"^-\s+" + re.escape(label) + r":", text, re.MULTILINE | re.IGNORECASE) is not None
+
+
+SLICE_FIELDS = ["Status", "Owner", "Acceptance criteria", "Iterations"]
+PHASE_FIELDS = ["Status", "Reviewer", "Iterations"]
+
+missing = []
+for m in re.finditer(r"^###\s+(\d+\.\d+)\b", tasks, re.MULTILINE):
+    b = body(m.start())
+    for field in SLICE_FIELDS:
+        if not has_field(b, field):
+            missing.append(f"slice {m.group(1)} is missing its '{field}' line")
+for m in re.finditer(r"^###\s+Phase\s+(\d+)\s+review\b", tasks, re.MULTILINE | re.IGNORECASE):
+    b = body(m.start())
+    for field in PHASE_FIELDS:
+        if not has_field(b, field):
+            missing.append(f"Phase {m.group(1)} review is missing its '{field}' line")
+if missing:
+    for msg in missing:
+        emit_fail(msg)
+else:
+    emit_pass("every slice and phase review has its required fields")
+
+# Required ADR sections (matches templates/ADR.md; 'Alternatives' covers both
+# 'Alternatives considered' and the older 'Alternatives Considered').
+ADR_SECTIONS = ["Status", "Context", "Decision", "Alternatives", "Consequences"]
+adr_files = sorted(glob.glob(os.path.join("docs", "adr", "*.md")))
+if adr_files:
+    adr_missing = []
+    for path in adr_files:
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+        for sec in ADR_SECTIONS:
+            if not re.search(r"^##\s+" + re.escape(sec), text, re.MULTILINE | re.IGNORECASE):
+                adr_missing.append(f"{os.path.basename(path)} is missing its '## {sec}' section")
+    if adr_missing:
+        for msg in adr_missing:
+            emit_fail(msg)
+    else:
+        emit_pass(f"every ADR ({len(adr_files)}) has its required sections")
+else:
+    emit_pass("no project ADRs yet")
+
+sys.exit(fails)
+PYEOF
+)
+completeness_rc=$?
+set -e
+printf '%s\n' "$COMPLETENESS_OUT"
+ERRORS=$((ERRORS + completeness_rc))
+
 # --- Summary --------------------------------------------------------------
 
 printf '\n====================\n'
