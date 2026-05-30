@@ -55,7 +55,7 @@ Steps:
 
 6. Do NOT commit changes — the orchestrator commits.
 
-Do not work on slices other than ${SLICE_ID}. Do not edit the phase review entry — the orchestrator manages it.
+Do not work on slices other than ${SLICE_ID}. Do not edit the phase review entry — the orchestrator manages it. Before the final two lines of your response, include a short Self-critique section — assumptions you made, anything you skipped or deferred, and what the next session should double-check. Be blunt; write "none" for any item that is empty.
 PROMPT_EOF
 )
 

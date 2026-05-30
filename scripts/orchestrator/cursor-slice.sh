@@ -53,7 +53,7 @@ If you cannot proceed (missing secret, ambiguous requirement, architecture confl
    Work completed: escalated — <one-line reason>
    FACTORY_STATUS={"role":"cursor","action":"slice","slice":"${SLICE_ID}","status":"escalated","details":"<short reason>"}
 
-Do not modify slices other than ${SLICE_ID}. Do not start a different slice. Do not commit. Inspect source files only — do not grep, cat, or read files inside node_modules/, .factory-logs/, dist/, or build/.
+Do not modify slices other than ${SLICE_ID}. Do not start a different slice. Do not commit. Inspect source files only — do not grep, cat, or read files inside node_modules/, .factory-logs/, dist/, or build/. Before the final two lines of your response, include a short Self-critique section — assumptions you made, anything you skipped or deferred, and what the reviewer or next session should double-check. Be blunt; write "none" for any item that is empty.
 PROMPT_EOF
 )
 

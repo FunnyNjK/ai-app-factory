@@ -69,7 +69,7 @@ Steps:
 
 6. Do NOT commit changes — the orchestrator commits.
 
-Do not file slice-level code bugs. Those belong to Codex's slice review. If you find a code-level bug that slipped past Codex, mention it in your phase review notes but do not file it as a sub-task here — surface it as a Codex-process concern in ESCALATIONS.md instead. Inspect source files only — do not grep, cat, or read files inside node_modules/, .factory-logs/, dist/, or build/.
+Do not file slice-level code bugs. Those belong to Codex's slice review. If you find a code-level bug that slipped past Codex, mention it in your phase review notes but do not file it as a sub-task here — surface it as a Codex-process concern in ESCALATIONS.md instead. Inspect source files only — do not grep, cat, or read files inside node_modules/, .factory-logs/, dist/, or build/. Before the final two lines of your response, include a short Self-critique section — assumptions you made, anything you skipped or deferred, and what the product owner or next session should double-check. Be blunt; write "none" for any item that is empty.
 PROMPT_EOF
 )
 

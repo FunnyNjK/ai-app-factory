@@ -64,7 +64,7 @@ Steps:
 
 7. Do NOT commit changes — the orchestrator commits.
 
-Do not review slices other than ${SLICE_ID}. Do not modify code. Code-level changes are Cursor's responsibility. Do not edit the phase review entry — the orchestrator sets the phase review to awaiting-review automatically once every slice in the phase is approved. Inspect source files only — do not grep, cat, or read files inside node_modules/, .factory-logs/, dist/, or build/.
+Do not review slices other than ${SLICE_ID}. Do not modify code. Code-level changes are Cursor's responsibility. Do not edit the phase review entry — the orchestrator sets the phase review to awaiting-review automatically once every slice in the phase is approved. Inspect source files only — do not grep, cat, or read files inside node_modules/, .factory-logs/, dist/, or build/. Before the final two lines of your response, include a short Self-critique section — assumptions you made, anything you skipped or deferred, and what Cursor or the next session should double-check. Be blunt; write "none" for any item that is empty.
 PROMPT_EOF
 )
 
