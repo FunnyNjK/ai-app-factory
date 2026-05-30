@@ -117,6 +117,7 @@ Portable copy-paste mirrors of the canonical instruction files above. Keep both 
 | `templates/SIGNOFF.md` | Four-party Gate D sign-off note template (one section per role). |
 | `templates/ADR.md` | Architecture decision record template. |
 | `templates/.env.example` | Canonical environment variable inventory. |
+| `templates/ci-security.yml` | Security-guardrails CI workflow for generated projects (fails unless dependency automation and a real scanner both run). |
 
 ## Project skeleton
 

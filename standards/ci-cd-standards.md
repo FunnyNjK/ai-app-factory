@@ -75,6 +75,17 @@ Production deployment should require:
 
 ---
 
+## Security guardrails (enforce, do not just document)
+
+Security tooling must actually run, not merely exist as a file. A project's CI must:
+
+- Configure automated dependency updates (Dependabot or Renovate).
+- Run at least one real scanner on pull requests — SAST, secret, dependency, or IaC — such as CodeQL, Semgrep, gitleaks, Trivy, OSV-Scanner, or `dependency-review-action`.
+
+`templates/ci-security.yml` is a drop-in guardrail workflow that fails the build unless both hold. It greps the workflow contents to confirm a scanner is genuinely invoked rather than trusting a filename. Copy it into a project's `.github/workflows/` directory.
+
+---
+
 ## Deployment validation
 
 After deployment:

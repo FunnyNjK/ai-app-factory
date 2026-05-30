@@ -88,6 +88,7 @@ const requiredFiles = [
   "templates/SIGNOFF.md",
   "templates/TEST_PLAN.md",
   "templates/THREAT_MODEL.md",
+  "templates/ci-security.yml",
   "templates/infra/README.md",
   "templates/infra/main.bicep",
   "templates/infra/main.bicepparam.example",

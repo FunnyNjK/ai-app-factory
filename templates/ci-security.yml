@@ -1,0 +1,50 @@
+# Security Guardrails workflow for a factory-generated project.
+# Copy into a project's .github/workflows/ directory as ci-security.yml.
+#
+# It fails the build unless the project has BOTH:
+#   1. automated dependency updates configured (Dependabot or Renovate), and
+#   2. a workflow that ACTUALLY runs a security scanner — asserting the tooling
+#      is real, not nominal (it greps workflow contents, not just filenames).
+#
+# See standards/ci-cd-standards.md and standards/security-standards.md.
+
+name: Security Guardrails
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  guardrails:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require automated dependency updates
+        run: |
+          if [ -f .github/dependabot.yml ] || [ -f .github/dependabot.yaml ] \
+             || [ -f renovate.json ] || [ -f .github/renovate.json ] \
+             || [ -f .renovaterc ] || [ -f .renovaterc.json ]; then
+            echo "OK: dependency-update automation is configured."
+          else
+            echo "FAIL: no Dependabot or Renovate config found."
+            echo "Add .github/dependabot.yml (or a Renovate config) so dependencies stay patched."
+            exit 1
+          fi
+
+      - name: Require a real security scanner in CI
+        run: |
+          # This guard file lists scanner names below, so exclude it from the
+          # search — we want a scanner that some OTHER workflow actually runs.
+          scanners='codeql-action|github/codeql|semgrep|bandit|trivy|sonarcloud|sonarqube|snyk|checkov|tfsec|gitleaks|trufflehog|osv-scanner|dependency-review-action'
+          if grep -rEiq --exclude=ci-security.yml "$scanners" .github/workflows/; then
+            echo "OK: a workflow invokes a recognized security scanner."
+          else
+            echo "FAIL: no workflow invokes a recognized security scanner."
+            echo "Add at least one: CodeQL, Semgrep, Trivy, gitleaks, OSV-Scanner, dependency-review-action, etc."
+            exit 1
+          fi
