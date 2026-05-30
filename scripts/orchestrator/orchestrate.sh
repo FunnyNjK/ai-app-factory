@@ -13,7 +13,9 @@
 # Env vars:
 #   FACTORY_MAX_OUTER_ITER=200    — hard ceiling on outer loop iterations
 #   FACTORY_WALL_TIME_SEC=1800    — per-adapter wall time (passed via env)
-#   FACTORY_TOKEN_CAP=100000      — per-session token cap (passed via env)
+#   FACTORY_TOKEN_CAP=100000      — reserved; NOT enforced (no universal CLI
+#                                   token flag). FACTORY_WALL_TIME_SEC is the
+#                                   active per-session bound.
 #   RUN_PHASE_NO_PUSH=1           — commit but skip push (set on adapters)
 #   RUN_PHASE_AUTO_BRANCH=1       — auto-create role-specific branch
 #   RUN_PHASE_ALLOW_DIRTY=0       — refuse to start on a dirty tree

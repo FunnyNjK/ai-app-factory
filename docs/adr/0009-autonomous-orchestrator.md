@@ -63,9 +63,9 @@ Caps from `TASKS.md` header (or factory defaults from ADR-0008) are enforced by 
 |---|---|
 | Per-task iterations | Orchestrator increments counter on each cursor-slice or codex-slice-review for a given slice. At cap+1, halts with escalation. |
 | Per-phase iterations | Same, for claude-phase-review of a given phase. |
-| Per-session token cap | Passed to the adapter as `FACTORY_TOKEN_CAP`. Each adapter sets it as the underlying CLI's max-tokens / max-turns flag where the CLI supports it. |
+| Per-session token cap | `FACTORY_TOKEN_CAP` is reserved but **not enforced** — no headless CLI exposes a universal token-cap flag. Wall-time (`FACTORY_WALL_TIME_SEC`) is the enforced per-session bound; Claude also honors `--max-turns` via `RUN_PHASE_CLAUDE_MAX_TURNS`. |
 | Per-session wall time | Adapter wraps the CLI call in `timeout <seconds>` (GNU coreutils). |
-| Per-project budget USD | Tracked in `<project>/TASKS.md` budget header. Orchestrator records estimated session cost (configurable per model) after each adapter run. Halts at cap. |
+| Per-project budget USD | A target recorded in the `<project>/TASKS.md` budget header for the human. The orchestrator does **not** compute or enforce per-session dollar cost today (there is no token/cost accounting); the wall-time and iteration caps are the enforced bounds. |
 
 Cap hits are non-recoverable inside the loop. The orchestrator writes an `ESCALATIONS.md` entry and exits with code 2 (human-needed). The product owner unblocks by editing `TASKS.md` or `ESCALATIONS.md` and re-invoking the orchestrator.
 

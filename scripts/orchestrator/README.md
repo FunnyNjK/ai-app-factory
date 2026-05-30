@@ -84,7 +84,7 @@ The orchestrator runs to one of three terminal states:
 |---|---|---|
 | `FACTORY_MAX_OUTER_ITER` | `200` | Hard ceiling on the outer loop. Stops runaway loops if state is corrupted. |
 | `FACTORY_WALL_TIME_SEC` | `1800` | Per-adapter wall-time cap. Each adapter wraps its CLI in `timeout`. |
-| `FACTORY_TOKEN_CAP` | `100000` | Per-session token cap (passed to adapters; mapping depends on each CLI). |
+| `FACTORY_TOKEN_CAP` | `100000` | Reserved; **not currently enforced**. The headless CLIs expose no universal token-cap flag, so `FACTORY_WALL_TIME_SEC` (wall-time) is the active per-session bound; Claude additionally honors `RUN_PHASE_CLAUDE_MAX_TURNS`. |
 | `RUN_PHASE_NO_PUSH` | `0` | Set to `1` to commit but skip `git push`. |
 | `RUN_PHASE_AUTO_BRANCH` | `1` | Auto-create a `<tool>/phase-<timestamp>` branch if the current branch does not match. |
 | `RUN_PHASE_ALLOW_DIRTY` | `0` | Refuse to start on a dirty worktree (override at your own risk). |
