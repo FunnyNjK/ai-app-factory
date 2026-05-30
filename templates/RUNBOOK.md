@@ -145,3 +145,5 @@ Describe pipeline trigger and stages.
 4. Roll back if needed.
 5. Communicate status.
 6. Record root cause and follow-up actions.
+
+For a SEV2-or-worse incident, complete a full blameless post-mortem (the factory ships an `INCIDENT.md` template for this) and track each action item as a real task.

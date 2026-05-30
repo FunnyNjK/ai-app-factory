@@ -365,6 +365,8 @@ The factory has captured:
 - What should become a reusable template
 - What prompts or standards should be updated
 
+For any SEV2-or-worse incident, capture a full blameless post-incident review using `templates/INCIDENT.md`, and feed its "Lessons and feedback" back into the factory's standards and templates.
+
 ---
 
 ## 5. First Factory Backlog

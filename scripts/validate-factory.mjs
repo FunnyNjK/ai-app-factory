@@ -81,6 +81,7 @@ const requiredFiles = [
   "templates/API_SPEC.md",
   "templates/ARCHITECTURE.md",
   "templates/COST_ESTIMATE.md",
+  "templates/INCIDENT.md",
   "templates/PROJECT.md",
   "templates/RELEASE_CHECKLIST.md",
   "templates/RUNBOOK.md",

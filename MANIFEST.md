@@ -114,6 +114,7 @@ Portable copy-paste mirrors of the canonical instruction files above. Keep both 
 | `templates/TEST_PLAN.md` | Test strategy and test plan template. |
 | `templates/RELEASE_CHECKLIST.md` | Release readiness checklist template. |
 | `templates/RUNBOOK.md` | Operational runbook template. |
+| `templates/INCIDENT.md` | Blameless incident post-mortem template (Gate E / post-release review). |
 | `templates/SIGNOFF.md` | Four-party Gate D sign-off note template (one section per role). |
 | `templates/ADR.md` | Architecture decision record template. |
 | `templates/.env.example` | Canonical environment variable inventory. |
