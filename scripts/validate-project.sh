@@ -432,7 +432,13 @@ else:
 # Required ADR sections (matches templates/ADR.md; 'Alternatives' covers both
 # 'Alternatives considered' and the older 'Alternatives Considered').
 ADR_SECTIONS = ["Status", "Context", "Decision", "Alternatives", "Consequences"]
-adr_files = sorted(glob.glob(os.path.join("docs", "adr", "*.md")))
+# ADRs follow the NNNN-title.md naming convention. Only those files are ADRs;
+# skip any non-ADR file in the folder (e.g. an index README.md) that legitimately
+# has none of the ADR sections.
+adr_files = sorted(
+    p for p in glob.glob(os.path.join("docs", "adr", "*.md"))
+    if re.match(r"\d", os.path.basename(p))
+)
 if adr_files:
     adr_missing = []
     for path in adr_files:
