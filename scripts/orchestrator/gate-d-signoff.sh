@@ -75,7 +75,13 @@ run_session() {
       set -e
       ;;
     codex)
-      local flags=(--sandbox workspace-write)
+      # Default sandbox is workspace-write; if the operator's approval flag
+      # overrides the sandbox (e.g. "--sandbox danger-full-access"), drop the
+      # default so codex does not get a repeated '--sandbox'.
+      local flags=()
+      if [[ "${RUN_PHASE_CODEX_APPROVAL_FLAG:-}" != *--sandbox* ]]; then
+        flags+=(--sandbox workspace-write)
+      fi
       [ -n "${RUN_PHASE_CODEX_MODEL:-}" ] && flags+=(--model "$RUN_PHASE_CODEX_MODEL")
       if [ -n "${RUN_PHASE_CODEX_APPROVAL_FLAG:-}" ]; then
         local _approval

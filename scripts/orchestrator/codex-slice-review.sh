@@ -68,7 +68,14 @@ Do not review slices other than ${SLICE_ID}. Do not modify code. Code-level chan
 PROMPT_EOF
 )
 
-CODEX_FLAGS=(--sandbox workspace-write)
+# Default sandbox for the gating loop is workspace-write. If the operator's
+# approval flag overrides the sandbox itself (e.g. "--sandbox danger-full-access"
+# to permit localhost binding), do NOT also pass the default — codex rejects a
+# repeated '--sandbox'.
+CODEX_FLAGS=()
+if [[ "${RUN_PHASE_CODEX_APPROVAL_FLAG:-}" != *--sandbox* ]]; then
+  CODEX_FLAGS+=(--sandbox workspace-write)
+fi
 [ -n "${RUN_PHASE_CODEX_MODEL:-}" ] && CODEX_FLAGS+=(--model "$RUN_PHASE_CODEX_MODEL")
 if [ -n "${RUN_PHASE_CODEX_APPROVAL_FLAG:-}" ]; then
   read -r -a _approval <<<"$RUN_PHASE_CODEX_APPROVAL_FLAG"
