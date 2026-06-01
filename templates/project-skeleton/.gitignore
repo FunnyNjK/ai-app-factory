@@ -1,9 +1,10 @@
 # Dependencies
 node_modules/
 
-# Build output
-dist/
-build/
+# Build output. Anchored to the repo root with a leading slash so a source
+# directory named build/ or dist/ (e.g. tests/build/) is NOT silently ignored.
+/dist/
+/build/
 .next/
 .vercel/
 .output/
