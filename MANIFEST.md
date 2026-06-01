@@ -29,6 +29,7 @@ This repository contains a starter operating system for an AI-assisted app deliv
 | `scripts/validate-project.sh` | Lints a spawned project — required files, unfilled placeholders, TASKS.md and ESCALATIONS.md structure, sensitive-path scan. |
 | `scripts/refresh-project.sh` | Read-only drift detector — reports where a scaffolded project has fallen behind current factory conventions (TASKS.md legends, slash commands, the Gate D sign-off artifact, the version stamp). |
 | `scripts/factory-status.sh` | Quick factory health check — git state, CLI tool presence, ADR/blueprint/standard counts, validator pass/fail. Run before starting a new project. |
+| `scripts/factory.sh` | Context-aware interactive launcher (TUI) wrapping the existing scripts: in the factory, status / scaffold / open-a-project; in a project, status / next step / autopilot / settings. Has non-interactive next and status modes. See ADR-0012. |
 
 ## Orchestrator (Stage 2 of the gating model)
 
@@ -180,6 +181,7 @@ The starter folder structure copied into a new project folder by the new-project
 | `docs/adr/0009-autonomous-orchestrator.md` | Bash orchestrator design — per-role adapters, shared safety lib, status-line contract, budget enforcement. |
 | `docs/adr/0010-gate-d-signoff-adapter.md` | Gate D sign-off adapter — three agent sub-sessions fill SIGNOFF.md; product-owner sign-off escalated to a human. |
 | `docs/adr/0011-recurring-security-review-for-sensitive-projects.md` | Proposed — a data-classification-gated security-review step in the gating loop for sensitive-data projects. |
+| `docs/adr/0012-interactive-factory-tui.md` | Proposed — a thin, context-aware bash TUI launcher wrapping scaffold and the build loop. |
 
 ## Playbooks
 
