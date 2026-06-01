@@ -1,0 +1,25 @@
+{
+  "_comment": "Factory default delivery-team configuration. scaffold-new-project.sh copies this to a project's .factory-roles.json; the launcher's new-project wizard (scripts/factory.sh) overrides tool and name per role from the detected CLIs. Supported tools: claude, cursor, codex, gemini. Role keys are structural and must not be renamed — the custom 'name' is the display/prompt label. See docs/adr/0013-configurable-roles-and-tools.md.",
+  "roles": {
+    "architect": {
+      "tool": "claude",
+      "name": "Claude"
+    },
+    "developer": {
+      "tool": "cursor",
+      "name": "Cursor"
+    },
+    "tester": {
+      "tool": "codex",
+      "name": "Codex"
+    },
+    "security": {
+      "tool": "codex",
+      "name": "Security"
+    },
+    "code_review": {
+      "tool": "claude",
+      "name": "Code Review"
+    }
+  }
+}

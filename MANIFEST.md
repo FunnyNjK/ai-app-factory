@@ -22,10 +22,10 @@ This repository contains a starter operating system for an AI-assisted app deliv
 | File | Purpose |
 |---|---|
 | `.github/workflows/ci.yml` | Starter CI workflow that validates markdown quality and required factory files. |
-| `.github/pull_request_template.md` | PR checklist template including the four-party Gate D sign-off. |
+| `.github/pull_request_template.md` | PR checklist template including the six-party Gate D sign-off. |
 | `scripts/validate-factory.mjs` | Dependency-free validation script for required artifacts, manifest references, backtick path resolution, placeholder safety, and env-var cross-consistency. |
 | `scripts/scaffold-new-project.sh` | Scaffolds a new factory project — copies the skeleton + starter templates, replaces placeholders, optionally git-inits. Backs the new-project slash command and the `spawn-new-project` skill. |
-| `scripts/check-cli-tools.sh` | Preflight check for the three headless CLIs (`claude`, `codex`, `agent`) the orchestrator depends on. Reports presence, version, and whether auth env vars are set. |
+| `scripts/check-cli-tools.sh` | Preflight check for the four supported agent CLIs (`claude`, `codex`, `agent`, `gemini`) and the supporting tools. Reports presence, version, install help for any missing tool, and whether auth env vars are set. A missing agent CLI is informational (install only the ones your roles use); a missing supporting tool fails. |
 | `scripts/validate-project.sh` | Lints a spawned project — required files, unfilled placeholders, TASKS.md and ESCALATIONS.md structure, sensitive-path scan. |
 | `scripts/refresh-project.sh` | Read-only drift detector — reports where a scaffolded project has fallen behind current factory conventions (TASKS.md legends, slash commands, the Gate D sign-off artifact, the version stamp). |
 | `scripts/factory-status.sh` | Quick factory health check — git state, CLI tool presence, ADR/blueprint/standard counts, validator pass/fail. Run before starting a new project. |
@@ -33,7 +33,7 @@ This repository contains a starter operating system for an AI-assisted app deliv
 
 ## Orchestrator (Stage 2 of the gating model)
 
-Bash scripts that autonomously drive the per-slice (Cursor ↔ Codex) and per-phase (Claude) gating loop defined in `docs/adr/0008-per-slice-and-per-phase-gating.md` and `docs/adr/0009-autonomous-orchestrator.md`. Run from a project root that has a project TASKS.md and ESCALATIONS.md (see `templates/project-skeleton/`).
+Bash scripts that autonomously drive the per-slice and per-phase gating loop defined in `docs/adr/0008-per-slice-and-per-phase-gating.md` and `docs/adr/0009-autonomous-orchestrator.md`, with the five configurable roles and the per-phase security + code-review gates from `docs/adr/0013-configurable-roles-and-tools.md`. Which tool drives each role is read from the project's per-project .factory-roles.json config. Run from a project root that has a project TASKS.md and ESCALATIONS.md (see `templates/project-skeleton/`).
 
 | File | Purpose |
 |---|---|
@@ -41,9 +41,11 @@ Bash scripts that autonomously drive the per-slice (Cursor ↔ Codex) and per-ph
 | `scripts/orchestrator/cursor-slice.sh` | Adapter — one slice implementation via Cursor CLI. |
 | `scripts/orchestrator/codex-slice-review.sh` | Adapter — one slice review via Codex CLI. |
 | `scripts/orchestrator/codex-slice-verify.sh` | Adapter — one verification slice via Codex CLI (Owner: codex; no separate implementer). |
-| `scripts/orchestrator/claude-phase-review.sh` | Adapter — one phase review via Claude Code CLI. |
-| `scripts/orchestrator/gate-d-signoff.sh` | Adapter — Gate D four-party sign-off ceremony (three agent sub-sessions fill SIGNOFF.md; product-owner sign-off escalated). |
-| `scripts/orchestrator/lib.sh` | Shared safety + task-tracker helpers. Sourced by every script. |
+| `scripts/orchestrator/claude-phase-review.sh` | Adapter — one phase review via the architect role's tool (ADR-0013; default Claude). |
+| `scripts/orchestrator/security-phase-review.sh` | Adapter — post-phase security gate via the security role's tool (ADR-0013). Approves in place or escalates; blocks the phase. |
+| `scripts/orchestrator/codereview-phase-review.sh` | Adapter — post-phase code-review & refactoring gate via the code-review role's tool (ADR-0013). Approves in place or escalates; blocks the phase. |
+| `scripts/orchestrator/gate-d-signoff.sh` | Adapter — Gate D six-party sign-off ceremony (five agent sub-sessions fill SIGNOFF.md; product-owner sign-off escalated). See ADR-0013. |
+| `scripts/orchestrator/lib.sh` | Shared safety + task-tracker helpers, the tool registry, and per-project role config (ADR-0013). Sourced by every script. |
 | `scripts/orchestrator/README.md` | Usage, env vars, status-line contract, debugging. |
 | `docs/research/headless-cli/run-phase.sh` | Reference — original Claude harness from prior project. |
 | `docs/research/headless-cli/run-phase-codex.sh` | Reference — original Codex harness from prior project. |
@@ -120,7 +122,8 @@ Portable copy-paste mirrors of the canonical instruction files above. Keep both 
 | `templates/RELEASE_CHECKLIST.md` | Release readiness checklist template. |
 | `templates/RUNBOOK.md` | Operational runbook template. |
 | `templates/INCIDENT.md` | Blameless incident post-mortem template (Gate E / post-release review). |
-| `templates/SIGNOFF.md` | Four-party Gate D sign-off note template (one section per role). |
+| `templates/SIGNOFF.md` | Six-party Gate D sign-off note template (one section per role — five agents plus the product owner). |
+| `templates/factory-roles.default.json` | Default per-project delivery-team config (role → tool → name). Seeded into each project as .factory-roles.json. See ADR-0013. |
 | `templates/ADR.md` | Architecture decision record template. |
 | `templates/.env.example` | Canonical environment variable inventory. |
 | `templates/ci-security.yml` | Security-guardrails CI workflow for generated projects (fails unless dependency automation and a real scanner both run). |
@@ -175,13 +178,14 @@ The starter folder structure copied into a new project folder by the new-project
 | `docs/adr/0003-default-language-typescript.md` | TypeScript as the default implementation language. |
 | `docs/adr/0004-default-iac-bicep.md` | Bicep as the default infrastructure-as-code language. |
 | `docs/adr/0005-greenfield-only-scope.md` | The factory targets greenfield projects only. |
-| `docs/adr/0006-three-agent-signoff.md` | Gate D requires architect + developer + QE + team sign-off. |
+| `docs/adr/0006-three-agent-signoff.md` | Gate D requires architect + developer + QE + team sign-off. Superseded by ADR-0013 (six-party sign-off). |
 | `docs/adr/0007-default-database-postgres-then-sql-then-cosmos.md` | PostgreSQL is the default relational store, with Azure SQL and Cosmos DB as fallbacks. |
 | `docs/adr/0008-per-slice-and-per-phase-gating.md` | Per-slice (Cursor↔Codex) and per-phase (Codex→Claude) gating model with budget caps and ESCALATIONS.md. |
 | `docs/adr/0009-autonomous-orchestrator.md` | Bash orchestrator design — per-role adapters, shared safety lib, status-line contract, budget enforcement. |
 | `docs/adr/0010-gate-d-signoff-adapter.md` | Gate D sign-off adapter — three agent sub-sessions fill SIGNOFF.md; product-owner sign-off escalated to a human. |
 | `docs/adr/0011-recurring-security-review-for-sensitive-projects.md` | Proposed — a data-classification-gated security-review step in the gating loop for sensitive-data projects. |
 | `docs/adr/0012-interactive-factory-tui.md` | Proposed — a thin, context-aware bash TUI launcher wrapping scaffold and the build loop. |
+| `docs/adr/0013-configurable-roles-and-tools.md` | Five per-app roles, each mapped to a tool (claude/cursor/codex/gemini) in .factory-roles.json; per-phase security + code-review gates; six-party Gate D. Supersedes ADR-0006. |
 
 ## Playbooks
 

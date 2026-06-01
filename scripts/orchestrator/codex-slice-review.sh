@@ -15,15 +15,19 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck source=lib.sh
 . "$SCRIPT_DIR/lib.sh"
 
-TOOL_NAME="Codex"
+SLICE_ID="${1:?Usage: codex-slice-review.sh <slice-id>   e.g.  codex-slice-review.sh 1.2}"
+
+# The Tester role's tool and display name come from .factory-roles.json
+# (ADR-0013); defaults to Codex. factory_tool_invoke honors the same
+# RUN_PHASE_* overrides the old inline invocation did.
+ROLE_KEY="tester"
+TOOL=$(factory_role_tool "$ROLE_KEY")
+ROLE_NAME=$(factory_role_name "$ROLE_KEY")
+TOOL_NAME="$(factory_tool_label "$TOOL")"
 TOOL_LOG_PREFIX="codex_review"
 TOOL_SCRIPT="codex-slice-review.sh"
 
-SLICE_ID="${1:?Usage: codex-slice-review.sh <slice-id>   e.g.  codex-slice-review.sh 1.2}"
-
-rpl_require_tool codex \
-  "npm install -g @openai/codex" \
-  "https://github.com/openai/codex"
+factory_tool_require "$TOOL"
 
 rpl_preflight
 LOG_DIR=$(rpl_init_log_dir)
@@ -31,7 +35,7 @@ LOG_DIR=$(rpl_init_log_dir)
 WALL_TIME=${FACTORY_WALL_TIME_SEC:-1800}
 
 PROMPT=$(cat <<PROMPT_EOF
-You are Codex, the Quality Engineer for this AI App Factory project. Your task this session: review slice ${SLICE_ID} from TASKS.md.
+You are ${ROLE_NAME}, the Quality Engineer for this AI App Factory project. Your task this session: review slice ${SLICE_ID} from TASKS.md.
 
 Steps:
 
@@ -68,28 +72,14 @@ Do not review slices other than ${SLICE_ID}. Do not modify code. Code-level chan
 PROMPT_EOF
 )
 
-# Default sandbox for the gating loop is workspace-write. If the operator's
-# approval flag overrides the sandbox itself (e.g. "--sandbox danger-full-access"
-# to permit localhost binding), do NOT also pass the default — codex rejects a
-# repeated '--sandbox'.
-CODEX_FLAGS=()
-if [[ "${RUN_PHASE_CODEX_APPROVAL_FLAG:-}" != *--sandbox* ]]; then
-  CODEX_FLAGS+=(--sandbox workspace-write)
-fi
-[ -n "${RUN_PHASE_CODEX_MODEL:-}" ] && CODEX_FLAGS+=(--model "$RUN_PHASE_CODEX_MODEL")
-if [ -n "${RUN_PHASE_CODEX_APPROVAL_FLAG:-}" ]; then
-  read -r -a _approval <<<"$RUN_PHASE_CODEX_APPROVAL_FLAG"
-  CODEX_FLAGS+=("${_approval[@]}")
-fi
-
-log "Invoking Codex for slice $SLICE_ID review (wall-time cap ${WALL_TIME}s)..."
+log "Invoking $TOOL for slice $SLICE_ID review (role '$ROLE_NAME', wall-time cap ${WALL_TIME}s)..."
 set +e
-timeout "$WALL_TIME" codex exec "${CODEX_FLAGS[@]}" "$PROMPT" 2>&1 | tee "$LOG_DIR/work.log"
-codex_rc=${PIPESTATUS[0]}
+factory_tool_invoke "$TOOL" "$PROMPT" "$LOG_DIR/work.log" "$WALL_TIME"
+codex_rc=$?
 set -e
 
 if [ "$codex_rc" -eq 124 ]; then
-  err "Codex CLI timed out after ${WALL_TIME}s"
+  err "$TOOL timed out after ${WALL_TIME}s"
   factory_log_escalation ESCALATIONS.md "codex" "slice $SLICE_ID" "iteration-cap-hit" \
     "Codex CLI exceeded the per-session wall-time cap during slice review." \
     "Single invocation hit timeout at ${WALL_TIME}s. Log: $LOG_DIR/work.log" \
@@ -99,14 +89,14 @@ if [ "$codex_rc" -eq 124 ]; then
   exit 2
 fi
 if [ "$codex_rc" -ne 0 ]; then
-  err "Codex CLI exited with code $codex_rc"
+  err "$TOOL exited with code $codex_rc"
   echo 'FACTORY_STATUS={"role":"codex","action":"slice-review","slice":"'"$SLICE_ID"'","status":"error","details":"cli-failed-rc-'"$codex_rc"'"}'
   exit 1
 fi
 
 STATUS_LINE=$(factory_extract_status_line "$LOG_DIR/work.log")
 if [ -z "$STATUS_LINE" ]; then
-  err "Codex did not emit FACTORY_STATUS line. Check log: $LOG_DIR/work.log"
+  err "$TOOL did not emit FACTORY_STATUS line. Check log: $LOG_DIR/work.log"
   exit 1
 fi
 log "Adapter status: $STATUS_LINE"

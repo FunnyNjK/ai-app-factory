@@ -1,12 +1,12 @@
 # Project Tasks — <project-name>
 
-> Per-slice and per-phase task tracker. Source of truth for what is done, what is in progress, and what is blocked. See `docs/adr/0008-per-slice-and-per-phase-gating.md` in the factory for the gating model.
+> Per-slice and per-phase task tracker. Source of truth for what is done, what is in progress, and what is blocked. See `docs/adr/0008-per-slice-and-per-phase-gating.md` (gating model) and `docs/adr/0013-configurable-roles-and-tools.md` (five roles and the per-phase security + code-review gates) in the factory.
 
 ## Status values
 
 - `pending` — not yet started
 - `in-progress` — actively being worked or has new sub-tasks
-- `awaiting-review` — Cursor finished a slice; Codex picks up. Or, after a phase completes: Claude picks up.
+- `awaiting-review` — a slice is finished and its reviewer picks up. Or, after a phase's slices are all approved, each phase gate becomes `awaiting-review` in turn: the architect review, then the security gate, then the code-review gate.
 - `approved` — passed its review gate
 - `blocked` — cannot proceed; needs human input (see `ESCALATIONS.md`)
 - `human-needed` — iteration cap hit; needs human review
@@ -57,7 +57,21 @@ When a cap is hit, the agent writes to `ESCALATIONS.md` and marks the affected w
 ### Phase 1 review
 
 - Status: `pending` (becomes `awaiting-review` when all slices in this phase are `approved`)
-- Reviewer: claude
+- Reviewer: architect
+- Iterations: 0/2
+- Notes: -
+
+### Phase 1 security
+
+- Status: `pending` (becomes `awaiting-review` when `Phase 1 review` is `approved`)
+- Reviewer: security
+- Iterations: 0/2
+- Notes: -
+
+### Phase 1 code-review
+
+- Status: `pending` (becomes `awaiting-review` when `Phase 1 security` is `approved`)
+- Reviewer: code_review
 - Iterations: 0/2
 - Notes: -
 
@@ -79,7 +93,21 @@ When a cap is hit, the agent writes to `ESCALATIONS.md` and marks the affected w
 ### Phase 2 review
 
 - Status: `pending`
-- Reviewer: claude
+- Reviewer: architect
+- Iterations: 0/2
+- Notes: -
+
+### Phase 2 security
+
+- Status: `pending`
+- Reviewer: security
+- Iterations: 0/2
+- Notes: -
+
+### Phase 2 code-review
+
+- Status: `pending`
+- Reviewer: code_review
 - Iterations: 0/2
 - Notes: -
 
@@ -116,8 +144,18 @@ When Claude finds phase-level issues, file them under the phase review. Example 
 
 ---
 
+## Phase gates
+
+Each phase has three gates that run in order after its slices are all approved (see `docs/adr/0013-configurable-roles-and-tools.md`):
+
+1. **`Phase N review`** — the architect reviews the phase as a whole for cohesion and intent.
+2. **`Phase N security`** — the security role reviews the phase for vulnerabilities and hardens in place; it may escalate to a human.
+3. **`Phase N code-review`** — the code-review role reviews maintainability and applies behavior-preserving refactors; it may escalate.
+
+All three must reach `approved` for the phase to be complete. The gates block: the security gate opens only after the review gate is approved, and the code-review gate only after the security gate is approved.
+
 ## Phase order
 
-Phases proceed strictly in order. Phase N+1 cannot start until Phase N is `approved` and `ESCALATIONS.md` has no open `human-needed` items affecting Phase N+1.
+Phases proceed strictly in order. Phase N+1 cannot start until every gate of Phase N (`review`, `security`, `code-review`) is `approved` and `ESCALATIONS.md` has no open `human-needed` items affecting Phase N+1.
 
-The product owner reviews `ESCALATIONS.md` after each phase review (or sooner). Once the queue is clear (or escalations are explicitly deferred), the next phase begins.
+The product owner reviews `ESCALATIONS.md` after each phase (or sooner). Once the queue is clear (or escalations are explicitly deferred), the next phase begins.

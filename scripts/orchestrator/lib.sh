@@ -421,6 +421,8 @@ text = strip_code_blocks(raw)
 # Status line under a heading: `- Status: <value>` (possibly backticked)
 slice_pat = re.compile(r"^###\s+(\d+\.\d+)\b", re.MULTILINE)
 phase_review_pat = re.compile(r"^###\s+Phase\s+(\d+)\s+review\b", re.MULTILINE | re.IGNORECASE)
+phase_security_pat = re.compile(r"^###\s+Phase\s+(\d+)\s+security\b", re.MULTILINE | re.IGNORECASE)
+phase_code_review_pat = re.compile(r"^###\s+Phase\s+(\d+)\s+code-review\b", re.MULTILINE | re.IGNORECASE)
 status_pat = re.compile(r"^-\s+Status:\s+`?([a-z\-]+)`?", re.MULTILINE | re.IGNORECASE)
 owner_pat = re.compile(r"^-\s+Owner:\s*`?([a-zA-Z\-]+)`?", re.MULTILINE | re.IGNORECASE)
 
@@ -430,6 +432,10 @@ for m in slice_pat.finditer(text):
     items.append((m.start(), "slice", m.group(1)))
 for m in phase_review_pat.finditer(text):
     items.append((m.start(), "phase-review", m.group(1)))
+for m in phase_security_pat.finditer(text):
+    items.append((m.start(), "phase-security", m.group(1)))
+for m in phase_code_review_pat.finditer(text):
+    items.append((m.start(), "phase-code-review", m.group(1)))
 items.sort(key=lambda t: t[0])
 
 # For each heading, read the first Status (and, for slices, Owner) line in its
@@ -461,10 +467,22 @@ def route_owner(owner):
     return "cursor slice"
 
 
-# Priority 1: phase-review awaiting-review -> Claude reviews the phase.
+# Priority 1: phase-review awaiting-review -> architect reviews the phase.
 for kind, ident, status, owner in parsed:
     if kind == "phase-review" and status == "awaiting-review":
         print(f"claude phase-review {ident}")
+        sys.exit(0)
+# Priority 1b: phase-security awaiting-review -> security reviews the phase
+# (ADR-0013). Runs after the architect's phase review is approved; blocks.
+for kind, ident, status, owner in parsed:
+    if kind == "phase-security" and status == "awaiting-review":
+        print(f"security phase-security {ident}")
+        sys.exit(0)
+# Priority 1c: phase-code-review awaiting-review -> code-review reviews the
+# phase (ADR-0013). Runs after the security gate is approved; blocks.
+for kind, ident, status, owner in parsed:
+    if kind == "phase-code-review" and status == "awaiting-review":
+        print(f"codereview phase-code-review {ident}")
         sys.exit(0)
 # Priority 2: slice awaiting-review -> Codex reviews it (always, ignoring Owner).
 for kind, ident, status, owner in parsed:
@@ -481,12 +499,31 @@ for kind, ident, status, owner in parsed:
     if kind == "slice" and status == "pending":
         print(f"{route_owner(owner)} {ident}")
         sys.exit(0)
-# Priority 5: Gate D. Every phase review approved and SIGNOFF.md still in its
-# pristine template state (no agent has signed) -> run the Gate D sign-off
-# adapter. Once an agent has signed, SIGNOFF_STATE is no longer "pristine" and
-# this does not fire again; the orchestrator's end-game handles the rest.
-phase_reviews = [(k, i, s) for (k, i, s, o) in parsed if k == "phase-review"]
-all_phases_approved = bool(phase_reviews) and all(s == "approved" for _, _, s in phase_reviews)
+# Priority 5: Gate D. Every phase's gates (review, plus security and
+# code-review when present) must be approved, and SIGNOFF.md must still be in
+# its pristine template state (no agent has signed) -> run the Gate D sign-off
+# adapter. A gate that is absent on an older project counts as satisfied, so
+# projects scaffolded before ADR-0013 still reach Gate D. Once an agent has
+# signed, SIGNOFF_STATE is no longer "pristine" and this does not fire again.
+gate_kinds = ("phase-review", "phase-security", "phase-code-review")
+gate_status = {}  # (ident, kind) -> status
+for kind, ident, status, owner in parsed:
+    if kind in gate_kinds:
+        gate_status[(ident, kind)] = status
+phase_ids = sorted({i for (i, _k) in gate_status}, key=int)
+
+
+def gate_ok(ident, kind):
+    # Absent gate (older project) counts as satisfied; present gate must be approved.
+    return gate_status.get((ident, kind), "approved") == "approved"
+
+
+all_phases_approved = bool(phase_ids) and all(
+    gate_status.get((p, "phase-review"), "missing") == "approved"
+    and gate_ok(p, "phase-security")
+    and gate_ok(p, "phase-code-review")
+    for p in phase_ids
+)
 if all_phases_approved and SIGNOFF_STATE == "pristine":
     print("orchestrator gate-d-signoff -")
     sys.exit(0)
@@ -516,8 +553,12 @@ if KIND == "slice":
     heading_re = re.compile(rf"^###\s+{re.escape(IDENT)}\b")
 elif KIND == "phase-review":
     heading_re = re.compile(rf"^###\s+Phase\s+{re.escape(IDENT)}\s+review\b", re.IGNORECASE)
+elif KIND == "phase-security":
+    heading_re = re.compile(rf"^###\s+Phase\s+{re.escape(IDENT)}\s+security\b", re.IGNORECASE)
+elif KIND == "phase-code-review":
+    heading_re = re.compile(rf"^###\s+Phase\s+{re.escape(IDENT)}\s+code-review\b", re.IGNORECASE)
 else:
-    sys.exit("kind must be slice or phase-review")
+    sys.exit("kind must be slice, phase-review, phase-security, or phase-code-review")
 
 status_re = re.compile(r"^-\s+Status:\s+`?([a-z\-]+)`?", re.IGNORECASE)
 next_heading_re = re.compile(r"^###\s")
@@ -569,8 +610,12 @@ if KIND == "slice":
     heading_re = re.compile(rf"^###\s+{re.escape(IDENT)}\b")
 elif KIND == "phase-review":
     heading_re = re.compile(rf"^###\s+Phase\s+{re.escape(IDENT)}\s+review\b", re.IGNORECASE)
+elif KIND == "phase-security":
+    heading_re = re.compile(rf"^###\s+Phase\s+{re.escape(IDENT)}\s+security\b", re.IGNORECASE)
+elif KIND == "phase-code-review":
+    heading_re = re.compile(rf"^###\s+Phase\s+{re.escape(IDENT)}\s+code-review\b", re.IGNORECASE)
 else:
-    sys.exit("kind must be slice or phase-review")
+    sys.exit("kind must be slice, phase-review, phase-security, or phase-code-review")
 
 iter_re = re.compile(r"^-\s+Iterations:\s+(\d+)\s*/\s*(\d+)")
 next_heading_re = re.compile(r"^###\s")
@@ -641,8 +686,12 @@ if KIND == "slice":
     heading_re = re.compile(rf"^###\s+{re.escape(IDENT)}\b")
 elif KIND == "phase-review":
     heading_re = re.compile(rf"^###\s+Phase\s+{re.escape(IDENT)}\s+review\b", re.IGNORECASE)
+elif KIND == "phase-security":
+    heading_re = re.compile(rf"^###\s+Phase\s+{re.escape(IDENT)}\s+security\b", re.IGNORECASE)
+elif KIND == "phase-code-review":
+    heading_re = re.compile(rf"^###\s+Phase\s+{re.escape(IDENT)}\s+code-review\b", re.IGNORECASE)
 else:
-    sys.exit("kind must be slice or phase-review")
+    sys.exit("kind must be slice, phase-review, phase-security, or phase-code-review")
 
 iter_re = re.compile(r"^-\s+Iterations:\s+(\d+)\s*/\s*(\d+)")
 next_heading_re = re.compile(r"^###\s")
@@ -757,6 +806,8 @@ def strip_code_blocks(text):
 text = strip_code_blocks(raw)
 heading_re = re.compile(r"^###\s", re.MULTILINE)
 phase_review_re = re.compile(r"^###\s+Phase\s+(\d+)\s+review\b", re.MULTILINE | re.IGNORECASE)
+phase_security_re = re.compile(r"^###\s+Phase\s+(\d+)\s+security\b", re.MULTILINE | re.IGNORECASE)
+phase_code_review_re = re.compile(r"^###\s+Phase\s+(\d+)\s+code-review\b", re.MULTILINE | re.IGNORECASE)
 status_re = re.compile(r"^-\s+Status:\s+`?([a-z\-]+)`?", re.MULTILINE | re.IGNORECASE)
 
 heads = [m.start() for m in heading_re.finditer(text)]
@@ -765,14 +816,23 @@ def body_after(pos):
     nxt = min([h for h in heads if h > pos], default=len(text))
     return text[pos:nxt]
 
+def status_at(m):
+    sm = status_re.search(body_after(m.start()))
+    return sm.group(1).lower() if sm else "pending"
+
+# The architect phase reviews are mandatory: at least one must exist and all
+# must be approved. The security and code-review gates (ADR-0013) are also
+# required when present; absent on an older project means "not gated here".
 reviews = list(phase_review_re.finditer(text))
 if not reviews:
     sys.exit(1)
 for m in reviews:
-    sm = status_re.search(body_after(m.start()))
-    status = sm.group(1).lower() if sm else "pending"
-    if status != "approved":
+    if status_at(m) != "approved":
         sys.exit(1)
+for rx in (phase_security_re, phase_code_review_re):
+    for m in rx.finditer(text):
+        if status_at(m) != "approved":
+            sys.exit(1)
 sys.exit(0)
 PYEOF
 }
@@ -803,11 +863,16 @@ with open(sys.argv[1], "r", encoding="utf-8") as fh:
     text = fh.read().replace("\r\n", "\n")
 
 lines = text.split("\n")
+# Headings are role-anchored and tool-agnostic (ADR-0013): the optional
+# "(Tool)" suffix is accepted so SIGNOFF.md files written before the rename
+# ("## Architect (Claude) sign-off") still classify.
 sections = [
-    ("architect", r"^##\s+Architect \(Claude\) sign-off\s*$"),
-    ("developer", r"^##\s+Developer \(Cursor\) sign-off\s*$"),
-    ("codex", r"^##\s+Quality Engineer \(Codex\) sign-off\s*$"),
-    ("po", r"^##\s+Product owner / technical owner sign-off\s*$"),
+    ("architect",   r"^##\s+Architect(\s+\([^)]*\))?\s+sign-off\s*$"),
+    ("developer",   r"^##\s+Developer(\s+\([^)]*\))?\s+sign-off\s*$"),
+    ("qe",          r"^##\s+Quality Engineer(\s+\([^)]*\))?\s+sign-off\s*$"),
+    ("security",    r"^##\s+Security(\s+\([^)]*\))?\s+sign-off\s*$"),
+    ("code_review", r"^##\s+Code Review(\s+\([^)]*\))?\s+sign-off\s*$"),
+    ("po",          r"^##\s+Product owner / technical owner sign-off\s*$"),
 ]
 
 def section_body(start):
@@ -818,13 +883,16 @@ def section_body(start):
             break
     return "\n".join(lines[start:end])
 
+present = {}
 filled = {}
 for name, pat in sections:
     rx = re.compile(pat, re.IGNORECASE)
     start = next((i for i, ln in enumerate(lines) if rx.match(ln)), None)
     if start is None:
+        present[name] = False
         filled[name] = False
         continue
+    present[name] = True
     body = section_body(start)
     unfilled = ("YYYY-MM-DD" in body) or bool(
         re.search(r"^\*\*Decision:\*\*.*\|", body, re.MULTILINE)
@@ -833,13 +901,17 @@ for name, pat in sections:
         unfilled = True
     filled[name] = not unfilled
 
-agents = [filled["architect"], filled["developer"], filled["codex"]]
+# The agent sign-offs are the five non-PO sections. A section that is absent
+# (a project scaffolded before ADR-0013 added the Security and Code Review
+# sign-offs) is simply not part of this project's required set.
+agent_keys = ["architect", "developer", "qe", "security", "code_review"]
+agents = [filled[k] for k in agent_keys if present[k]]
 po = filled["po"]
 if not any(agents) and not po:
     print("pristine")
-elif all(agents) and po:
+elif agents and all(agents) and po:
     print("complete")
-elif all(agents) and not po:
+elif agents and all(agents) and not po:
     print("agents-signed")
 else:
     print("partial")
@@ -878,6 +950,10 @@ if KIND == "slice":
     heading_re = re.compile(rf"^###\s+{re.escape(IDENT)}\b")
 elif KIND == "phase-review":
     heading_re = re.compile(rf"^###\s+Phase\s+{re.escape(IDENT)}\s+review\b", re.IGNORECASE)
+elif KIND == "phase-security":
+    heading_re = re.compile(rf"^###\s+Phase\s+{re.escape(IDENT)}\s+security\b", re.IGNORECASE)
+elif KIND == "phase-code-review":
+    heading_re = re.compile(rf"^###\s+Phase\s+{re.escape(IDENT)}\s+code-review\b", re.IGNORECASE)
 else:
     print("")
     sys.exit(0)
@@ -1040,12 +1116,90 @@ PYEOF
 # ---------------------------------------------------------------------------
 factory_set_phase_review_awaiting() {
   local tasks_file="$1" phase="$2"
+  factory_set_phase_item_awaiting "$tasks_file" phase-review "$phase"
+}
+
+# ---------------------------------------------------------------------------
+# factory_set_phase_item_awaiting — set a phase gate (phase-review,
+# phase-security, or phase-code-review) to awaiting-review, but ONLY when it is
+# currently pending, so an approved / in-progress / human-needed gate is never
+# downgraded. No-op and success if the gate is in any other state or absent
+# (an older project may not have the security/code-review gates). Idempotent.
+# This is what chains the gates: review approved -> set security awaiting;
+# security approved -> set code-review awaiting (ADR-0013).
+# Args: $1 tasks_file, $2 kind (phase-review|phase-security|phase-code-review),
+#       $3 phase number
+# ---------------------------------------------------------------------------
+factory_set_phase_item_awaiting() {
+  local tasks_file="$1" kind="$2" phase="$3"
   local cur
-  cur=$(factory_item_status "$tasks_file" phase-review "$phase")
+  cur=$(factory_item_status "$tasks_file" "$kind" "$phase")
   if [ "$cur" = "pending" ]; then
-    factory_update_status "$tasks_file" phase-review "$phase" "awaiting-review"
+    factory_update_status "$tasks_file" "$kind" "$phase" "awaiting-review"
   fi
   return 0
+}
+
+# ---------------------------------------------------------------------------
+# factory_phase_fully_approved — exit 0 if a phase is complete across ALL of its
+# gates: the architect review (mandatory) plus the security and code-review
+# gates (ADR-0013) when those headings exist. A gate that is absent counts as
+# satisfied, so a phase on an older single-gate project is "fully approved" once
+# its review is approved. Exit 1 if the phase has no review gate or any present
+# gate is not approved. Fenced code blocks are stripped.
+# Args: $1 tasks_file, $2 phase number
+# ---------------------------------------------------------------------------
+factory_phase_fully_approved() {
+  local tasks_file="$1" phase="$2"
+  [ -f "$tasks_file" ] || return 1
+  python3 - "$tasks_file" "$phase" <<'PYEOF'
+import re
+import sys
+
+TASKS_FILE, PHASE = sys.argv[1:3]
+with open(TASKS_FILE, "r", encoding="utf-8") as f:
+    raw = f.read()
+
+
+def strip_code_blocks(text):
+    out = []
+    in_fence = False
+    for line in text.split("\n"):
+        if line.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if not in_fence:
+            out.append(line)
+    return "\n".join(out)
+
+
+text = strip_code_blocks(raw)
+heads = [m.start() for m in re.finditer(r"^###\s", text, re.MULTILINE)]
+status_re = re.compile(r"^-\s+Status:\s+`?([a-z\-]+)`?", re.MULTILINE | re.IGNORECASE)
+
+
+def body_after(pos):
+    nxt = min([h for h in heads if h > pos], default=len(text))
+    return text[pos:nxt]
+
+
+def gate_status(word):
+    rx = re.compile(rf"^###\s+Phase\s+{re.escape(PHASE)}\s+{word}\b", re.MULTILINE | re.IGNORECASE)
+    m = rx.search(text)
+    if not m:
+        return None
+    sm = status_re.search(body_after(m.start()))
+    return sm.group(1).lower() if sm else "pending"
+
+
+if gate_status("review") is None:
+    sys.exit(1)  # not a recognized phase (no architect review gate)
+for word in ("review", "security", "code-review"):
+    st = gate_status(word)
+    if st is not None and st != "approved":
+        sys.exit(1)
+sys.exit(0)
+PYEOF
 }
 
 # ---------------------------------------------------------------------------
@@ -1246,4 +1400,226 @@ factory_strip_log_noise() {
     rm -f "$tmp"
   fi
   return 0
+}
+
+# ===========================================================================
+# Tool registry + per-project role configuration (ADR-0013).
+#
+# The factory builds apps; each app's delivery team is FIVE roles, and any of
+# the four supported tools can fill any role, per project. The role->tool->name
+# mapping lives in the project's .factory-roles.json (written at scaffold,
+# customized by scripts/factory.sh). These helpers read that file, falling back
+# to built-in defaults so a project without the file still runs.
+#
+# Role keys (structural, never renamed): architect developer tester security
+# code_review. Tool ids (the four supported CLIs): claude cursor codex gemini.
+# The custom "name" is a DISPLAY/PROMPT label only — parsers never key on it.
+# ===========================================================================
+
+# factory_tool_binary <tool-id> — the PATH binary that provides a tool.
+factory_tool_binary() {
+  case "$1" in
+    claude) printf 'claude\n' ;;
+    cursor) printf 'agent\n' ;;
+    codex)  printf 'codex\n' ;;
+    gemini) printf 'gemini\n' ;;
+    *)      printf '\n' ;;
+  esac
+}
+
+# factory_tool_label <tool-id> — pretty display name for menus/logs.
+factory_tool_label() {
+  case "$1" in
+    claude) printf 'Claude\n' ;;
+    cursor) printf 'Cursor\n' ;;
+    codex)  printf 'Codex\n' ;;
+    gemini) printf 'Gemini\n' ;;
+    *)      printf '%s\n' "$1" ;;
+  esac
+}
+
+# factory_tool_is_supported <tool-id> — exit 0 if the tool is in the registry.
+factory_tool_is_supported() {
+  case "$1" in claude|cursor|codex|gemini) return 0 ;; *) return 1 ;; esac
+}
+
+# factory_tool_detect <tool-id> — exit 0 if the tool's binary is on PATH.
+factory_tool_detect() {
+  local bin
+  bin=$(factory_tool_binary "$1")
+  [ -n "$bin" ] && command -v "$bin" >/dev/null 2>&1
+}
+
+# factory_tool_require <tool-id> — fail fast (exit 127) if the tool is absent.
+factory_tool_require() {
+  case "$1" in
+    claude) rpl_require_tool claude "npm install -g @anthropic-ai/claude-code" "https://docs.anthropic.com/en/docs/claude-code" ;;
+    cursor) rpl_require_tool agent  "curl https://cursor.com/install -fsS | bash" "https://cursor.com/docs/cli" ;;
+    codex)  rpl_require_tool codex  "npm install -g @openai/codex" "https://github.com/openai/codex" ;;
+    gemini) rpl_require_tool gemini "npm install -g @google/gemini-cli" "https://geminicli.com/docs/" ;;
+    *) err "factory_tool_require: unknown tool '$1' (supported: claude cursor codex gemini)"; exit 1 ;;
+  esac
+}
+
+# factory_timeout_bin — echo the available wall-time-cap binary: GNU `timeout`,
+# or `gtimeout` (Homebrew coreutils on macOS, which ships neither by default),
+# or empty if neither is present.
+factory_timeout_bin() {
+  if command -v timeout >/dev/null 2>&1; then
+    printf 'timeout\n'
+  elif command -v gtimeout >/dev/null 2>&1; then
+    printf 'gtimeout\n'
+  else
+    printf '\n'
+  fi
+}
+
+# factory_run_capped <seconds> <cmd> [args...] — run a command under a wall-time
+# cap when a timeout binary exists; otherwise run it uncapped (warning once per
+# process). The cap binary returns 124 on timeout, which adapters detect.
+factory_run_capped() {
+  local secs="$1"
+  shift
+  local tb
+  tb=$(factory_timeout_bin)
+  if [ -n "$tb" ]; then
+    "$tb" "$secs" "$@"
+  else
+    if [ -z "${_FACTORY_TIMEOUT_WARNED:-}" ]; then
+      err "warning: no 'timeout' or 'gtimeout' on PATH — running agent sessions WITHOUT the ${secs}s wall-time cap."
+      err "         On macOS install it with:  brew install coreutils   (provides gtimeout)"
+      _FACTORY_TIMEOUT_WARNED=1
+    fi
+    "$@"
+  fi
+}
+
+# factory_tool_invoke <tool-id> <prompt> <logfile> [walltime] — run a tool's
+# headless invocation, tee'ing combined output to <logfile>. Returns the tool's
+# exit code (124 = timeout when a cap binary is present). One invocation contract
+# for every adapter and the Gate D ceremony; each tool keeps its own flags and
+# RUN_PHASE_* overrides.
+factory_tool_invoke() {
+  local tool="$1" prompt="$2" logfile="$3"
+  local walltime="${4:-${FACTORY_WALL_TIME_SEC:-1800}}"
+  local rc=0
+  case "$tool" in
+    claude)
+      local flags
+      read -r -a flags <<<"${RUN_PHASE_CLAUDE_FLAGS:---dangerously-skip-permissions}"
+      [ -n "${RUN_PHASE_CLAUDE_MODEL:-}" ] && flags+=(--model "$RUN_PHASE_CLAUDE_MODEL")
+      [ -n "${RUN_PHASE_CLAUDE_MAX_TURNS:-}" ] && flags+=(--max-turns "$RUN_PHASE_CLAUDE_MAX_TURNS")
+      set +e
+      factory_run_capped "$walltime" claude -p "$prompt" "${flags[@]}" 2>&1 | tee "$logfile"
+      rc=${PIPESTATUS[0]}
+      set -e
+      ;;
+    cursor)
+      local flags
+      read -r -a flags <<<"${RUN_PHASE_CURSOR_FLAGS:---trust --force --sandbox disabled --output-format text}"
+      [ -n "${RUN_PHASE_CURSOR_MODEL:-}" ] && flags+=(--model "$RUN_PHASE_CURSOR_MODEL")
+      set +e
+      factory_run_capped "$walltime" agent -p "${flags[@]}" -- "$prompt" 2>&1 | tee "$logfile"
+      rc=${PIPESTATUS[0]}
+      set -e
+      ;;
+    codex)
+      # Default sandbox is workspace-write; if the operator's approval flag
+      # overrides the sandbox (e.g. "--sandbox danger-full-access"), drop the
+      # default so codex does not get a repeated '--sandbox'.
+      local flags=()
+      if [[ "${RUN_PHASE_CODEX_APPROVAL_FLAG:-}" != *--sandbox* ]]; then
+        flags+=(--sandbox workspace-write)
+      fi
+      [ -n "${RUN_PHASE_CODEX_MODEL:-}" ] && flags+=(--model "$RUN_PHASE_CODEX_MODEL")
+      if [ -n "${RUN_PHASE_CODEX_APPROVAL_FLAG:-}" ]; then
+        local _approval
+        read -r -a _approval <<<"$RUN_PHASE_CODEX_APPROVAL_FLAG"
+        flags+=("${_approval[@]}")
+      fi
+      set +e
+      factory_run_capped "$walltime" codex exec "${flags[@]}" "$prompt" 2>&1 | tee "$logfile"
+      rc=${PIPESTATUS[0]}
+      set -e
+      ;;
+    gemini)
+      # Gemini CLI headless mode: -p runs non-interactive; --yolo auto-approves
+      # tool calls (the factory's unattended-autonomy model). See ADR-0013.
+      local flags
+      read -r -a flags <<<"${RUN_PHASE_GEMINI_FLAGS:---yolo}"
+      [ -n "${RUN_PHASE_GEMINI_MODEL:-}" ] && flags+=(-m "$RUN_PHASE_GEMINI_MODEL")
+      set +e
+      factory_run_capped "$walltime" gemini -p "$prompt" "${flags[@]}" 2>&1 | tee "$logfile"
+      rc=${PIPESTATUS[0]}
+      set -e
+      ;;
+    *)
+      err "factory_tool_invoke: unknown tool '$tool' (supported: claude cursor codex gemini)"
+      return 2
+      ;;
+  esac
+  return "$rc"
+}
+
+# factory_role_default_tool <role-key> — built-in fallback tool for a role.
+# Keep in sync with templates/factory-roles.default.json.
+factory_role_default_tool() {
+  case "$1" in
+    architect)   printf 'claude\n' ;;
+    developer)   printf 'cursor\n' ;;
+    tester)      printf 'codex\n' ;;
+    security)    printf 'codex\n' ;;
+    code_review) printf 'claude\n' ;;
+    *)           printf '\n' ;;
+  esac
+}
+
+# factory_role_default_name <role-key> — built-in fallback display name.
+factory_role_default_name() {
+  case "$1" in
+    architect)   printf 'Claude\n' ;;
+    developer)   printf 'Cursor\n' ;;
+    tester)      printf 'Codex\n' ;;
+    security)    printf 'Security\n' ;;
+    code_review) printf 'Code Review\n' ;;
+    *)           printf '%s\n' "$1" ;;
+  esac
+}
+
+# _factory_role_field <role-key> <tool|name> [config-file] — read one field from
+# .factory-roles.json. Prints empty on any miss (absent file, bad JSON, no key).
+_factory_role_field() {
+  local role="$1" field="$2" cfg="${3:-.factory-roles.json}"
+  [ -f "$cfg" ] || { printf '\n'; return 0; }
+  python3 - "$cfg" "$role" "$field" <<'PYEOF' 2>/dev/null || true
+import json
+import sys
+cfg, role, field = sys.argv[1], sys.argv[2], sys.argv[3]
+try:
+    with open(cfg, encoding="utf-8") as f:
+        data = json.load(f)
+    val = data.get("roles", {}).get(role, {}).get(field, "")
+    if isinstance(val, str):
+        print(val)
+except Exception:
+    pass
+PYEOF
+}
+
+# factory_role_tool <role-key> [config-file] — the tool id assigned to a role,
+# from .factory-roles.json, or the built-in default.
+factory_role_tool() {
+  local role="$1" cfg="${2:-.factory-roles.json}" val
+  val=$(_factory_role_field "$role" tool "$cfg")
+  [ -n "$val" ] || val=$(factory_role_default_tool "$role")
+  printf '%s\n' "$val"
+}
+
+# factory_role_name <role-key> [config-file] — the custom display name for a
+# role, from .factory-roles.json, or the built-in default. Display/prompt only.
+factory_role_name() {
+  local role="$1" cfg="${2:-.factory-roles.json}" val
+  val=$(_factory_role_field "$role" name "$cfg")
+  [ -n "$val" ] || val=$(factory_role_default_name "$role")
+  printf '%s\n' "$val"
 }

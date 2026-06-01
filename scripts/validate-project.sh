@@ -219,7 +219,10 @@ fi
 printf '\n[6] Lifecycle consistency\n'
 
 set +e
-LIFECYCLE_OUT=$(python3 - <<'PYEOF'
+# Heredoc redirected to a temp file rather than wrapped in $(...): stock macOS
+# bash 3.2 mis-parses a here-doc nested inside command substitution.
+LIFECYCLE_TMP=$(mktemp "${TMPDIR:-/tmp}/factory-lifecycle.XXXXXX")
+python3 - >"$LIFECYCLE_TMP" <<'PYEOF'
 import os
 import re
 import sys
@@ -278,10 +281,22 @@ phase_reviews = [(i, s, n) for (k, i, s, n) in parsed if k == "phase-review"]
 slice_status = {i: s for (k, i, s, n) in parsed if k == "slice"}
 phase_status = {i: s for (k, i, s, n) in parsed if k == "phase-review"}
 
-# Check 1: SIGNOFF.md must be filled once every phase review is approved.
-all_approved = bool(phase_reviews) and all(s == "approved" for (_, s, _) in phase_reviews)
+# Per-phase security and code-review gates (ADR-0013) must also be approved
+# before Gate D is due. Absent gates (older projects) impose no requirement.
+extra_gate_status = []
+for word in ("security", "code-review"):
+    for m in re.finditer(r"^###\s+Phase\s+(\d+)\s+" + word + r"\b", tasks, re.MULTILINE | re.IGNORECASE):
+        sm = status_re.search(body(m.start()))
+        extra_gate_status.append(sm.group(1).lower() if sm else "pending")
+
+# Check 1: SIGNOFF.md must be filled once every phase gate is approved.
+all_approved = (
+    bool(phase_reviews)
+    and all(s == "approved" for (_, s, _) in phase_reviews)
+    and all(s == "approved" for s in extra_gate_status)
+)
 if not all_approved:
-    emit_pass("Gate D sign-off not due (not every phase review is approved)")
+    emit_pass("Gate D sign-off not due (not every phase gate is approved)")
 elif not os.path.exists("SIGNOFF.md"):
     emit_fail("every phase review is approved but SIGNOFF.md is missing - run gate-d-signoff.sh")
 else:
@@ -346,10 +361,10 @@ else:
 
 sys.exit(fails)
 PYEOF
-)
 lifecycle_rc=$?
 set -e
-printf '%s\n' "$LIFECYCLE_OUT"
+cat "$LIFECYCLE_TMP"
+rm -f "$LIFECYCLE_TMP"
 ERRORS=$((ERRORS + lifecycle_rc))
 
 # --- 7. Planning completeness (slice / phase / ADR required structure) -----
@@ -361,7 +376,8 @@ ERRORS=$((ERRORS + lifecycle_rc))
 printf '\n[7] Planning completeness\n'
 
 set +e
-COMPLETENESS_OUT=$(python3 - <<'PYEOF'
+COMPLETENESS_TMP=$(mktemp "${TMPDIR:-/tmp}/factory-completeness.XXXXXX")
+python3 - >"$COMPLETENESS_TMP" <<'PYEOF'
 import glob
 import os
 import re
@@ -423,6 +439,13 @@ for m in re.finditer(r"^###\s+Phase\s+(\d+)\s+review\b", tasks, re.MULTILINE | r
     for field in PHASE_FIELDS:
         if not has_field(b, field):
             missing.append(f"Phase {m.group(1)} review is missing its '{field}' line")
+# Security and code-review gates (ADR-0013) carry the same required fields.
+for word in ("security", "code-review"):
+    for m in re.finditer(r"^###\s+Phase\s+(\d+)\s+" + word + r"\b", tasks, re.MULTILINE | re.IGNORECASE):
+        b = body(m.start())
+        for field in PHASE_FIELDS:
+            if not has_field(b, field):
+                missing.append(f"Phase {m.group(1)} {word} is missing its '{field}' line")
 if missing:
     for msg in missing:
         emit_fail(msg)
@@ -457,10 +480,10 @@ else:
 
 sys.exit(fails)
 PYEOF
-)
 completeness_rc=$?
 set -e
-printf '%s\n' "$COMPLETENESS_OUT"
+cat "$COMPLETENESS_TMP"
+rm -f "$COMPLETENESS_TMP"
 ERRORS=$((ERRORS + completeness_rc))
 
 # --- Summary --------------------------------------------------------------

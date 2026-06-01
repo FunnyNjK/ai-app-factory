@@ -125,6 +125,13 @@ for f in PROJECT.md ARCHITECTURE.md SECURITY.md .env.example RELEASE_CHECKLIST.m
   fi
 done
 
+# Per-project delivery-team configuration (ADR-0013): which tool drives each of
+# the five roles, and the display name for each. Seeded from the factory
+# default; the launcher's new-project wizard (scripts/factory.sh) customizes it.
+if [ -f "$FACTORY_PATH/templates/factory-roles.default.json" ] && [ ! -e "$TARGET/.factory-roles.json" ]; then
+  cp "$FACTORY_PATH/templates/factory-roles.default.json" "$TARGET/.factory-roles.json"
+fi
+
 # Conditional templates by blueprint family.
 case "$BLUEPRINT" in
   api-service|azure-functions|stripe-app|plaid-app|postmark-email|full-stack-web-app)

@@ -245,9 +245,9 @@ All adapter logs land under `<project>/.factory-logs/<adapter>_<timestamp>/work.
 
 ## 7. Gate D sign-off and release
 
-When the final phase approves, the run is not done until the four-party Gate D sign-off in `SIGNOFF.md` is complete (`docs/adr/0006-three-agent-signoff.md`): architect, developer, quality engineer, and product owner.
+When the final phase completes, the run is not done until the six-party Gate D sign-off in `SIGNOFF.md` is complete (`docs/adr/0013-configurable-roles-and-tools.md`): architect, developer, quality engineer, security, code review, and product owner.
 
-In **autonomous mode**, the orchestrator handles the three agent sign-offs for you. Once every phase review is `approved` and `SIGNOFF.md` is still the unfilled template, it dispatches `gate-d-signoff.sh`, which runs three sub-sessions (Claude, Codex, Cursor) that each fill their section of `SIGNOFF.md`, then writes a product-owner escalation to `ESCALATIONS.md` and exits 2. In **manual mode**, run it yourself:
+In **autonomous mode**, the orchestrator handles the five agent sign-offs for you. Once every phase gate (review, security, code-review) is `approved` and `SIGNOFF.md` is still the unfilled template, it dispatches `gate-d-signoff.sh`, which runs five sub-sessions — each driven by the tool that role is mapped to in `.factory-roles.json` — that fill their sections of `SIGNOFF.md`, then writes a product-owner escalation to `ESCALATIONS.md` and exits 2. In **manual mode**, run it yourself:
 
 ```bash
 gate-d-signoff.sh
@@ -258,7 +258,7 @@ Then close out the release:
 1. Complete the product-owner section of `SIGNOFF.md` (Decision, Notes, Signed) — accept any documented risks and authorize the release — then commit it so the final fast-forward can carry it to `main`.
 2. Finalize `RELEASE_CHECKLIST.md` — any deferred items get explicit deferral notes.
 3. Run `validate-project.sh .` one more time. It checks that `SIGNOFF.md` is fully signed once every phase review is `approved`.
-4. Re-run `orchestrate.sh` one last time (autonomous mode): it detects all four sign-offs and exits 0.
+4. Re-run `orchestrate.sh` one last time (autonomous mode): it detects all six sign-offs and exits 0.
 5. Tag the release in git, deploy per `RUNBOOK.md`.
 
 ---
@@ -287,7 +287,7 @@ Then close out the release:
 ## 9. References
 
 - `OPERATING_MODEL.md` — overall factory model
-- `docs/adr/0006-three-agent-signoff.md` — Gate D sign-off
+- `docs/adr/0013-configurable-roles-and-tools.md` — five roles, per-phase security + code-review gates, six-party Gate D sign-off (supersedes ADR-0006)
 - `docs/adr/0008-per-slice-and-per-phase-gating.md` — gating model + budget caps
 - `docs/adr/0009-autonomous-orchestrator.md` — orchestrator design
 - `docs/adr/0010-gate-d-signoff-adapter.md` — Gate D sign-off adapter

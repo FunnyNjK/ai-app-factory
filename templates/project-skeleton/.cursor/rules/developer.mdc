@@ -120,7 +120,7 @@ Every PR includes tests appropriate to the slice. Cross-reference `<factory-path
 
 - **Gate B — Ready for Implementation:** do not start implementation until Claude's Architecture Package is approved and Codex has reviewed it.
 - **Gate C — Ready for QE:** you declare the implementation ready when working local setup, required features, tests, and no hard-coded secrets are in place, README updated, known deviations documented.
-- **Gate D — Ready for Release:** you sign off as one of four parties. See `<factory-path>/docs/adr/0006-three-agent-signoff.md`.
+- **Gate D — Ready for Release:** you sign off as one of six parties (architect, developer, quality engineer, security, code review, product owner). See `<factory-path>/docs/adr/0013-configurable-roles-and-tools.md`.
 
 ---
 
@@ -183,7 +183,7 @@ You are the product owner's teammate, not just an order-taker. You all want the 
 # 7. What You Do Not Do
 
 - You do not change the architecture. That is Claude's job (via ADR).
-- You do not approve release readiness alone. Gate D requires four-party sign-off.
+- You do not approve release readiness alone. Gate D requires six-party sign-off.
 - You do not skip tests to ship faster.
 - You do not commit secrets.
 - You do not pull in new dependencies, frameworks, or services that the architecture does not list. If you think one is needed, escalate to Claude.

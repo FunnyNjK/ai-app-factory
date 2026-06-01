@@ -1,12 +1,14 @@
 # Gate D Sign-off Notes
 
-This template captures the four short written sign-offs required at Gate D (see `OPERATING_MODEL.md` and `docs/adr/0006-three-agent-signoff.md`). Each agent writes one note. The product owner writes the fourth. All four live in the PR description or the release artifact and must reference the artifacts they reviewed.
+This template captures the six short written sign-offs required at Gate D (see `OPERATING_MODEL.md` and `docs/adr/0013-configurable-roles-and-tools.md`, which supersedes the three-agent model of `docs/adr/0006-three-agent-signoff.md`). Each of the five agent roles writes one note; the product owner writes the sixth. All six live in the PR description or the release artifact and must reference the artifacts they reviewed.
+
+Section headings are role-anchored and tool-agnostic — the role (Architect, Developer, …) is the sign-off, regardless of which tool the project mapped to that role in `.factory-roles.json`. The signer line carries the role's configured name.
 
 Keep each sign-off short. A sign-off is a paragraph plus a checklist, not a report.
 
 ---
 
-## Architect (Claude) sign-off
+## Architect sign-off
 
 **Decision:** Approved | Approved with notes | Blocked
 
@@ -22,11 +24,11 @@ Keep each sign-off short. A sign-off is a paragraph plus a checklist, not a repo
 
 Describe in 2–6 sentences what convinced you to approve, or what is blocking. Link any deviations to the ADR that covers them.
 
-**Signed:** Claude (architect) — `YYYY-MM-DD`
+**Signed:** `<name>` (architect) — `YYYY-MM-DD`
 
 ---
 
-## Developer (Cursor) sign-off
+## Developer sign-off
 
 **Decision:** Approved | Approved with notes | Blocked
 
@@ -42,11 +44,11 @@ Describe in 2–6 sentences what convinced you to approve, or what is blocking. 
 
 Describe in 2–6 sentences. Name any known limitations and where they are documented. If approval is conditional, name the condition.
 
-**Signed:** Cursor (developer) — `YYYY-MM-DD`
+**Signed:** `<name>` (developer) — `YYYY-MM-DD`
 
 ---
 
-## Quality Engineer (Codex) sign-off
+## Quality Engineer sign-off
 
 **Decision:** Ready | Ready with documented risks | Not ready
 
@@ -62,7 +64,47 @@ Describe in 2–6 sentences. Name any known limitations and where they are docum
 
 Describe in 2–6 sentences. If "Ready with documented risks," link each risk explicitly. Name the residual coverage gaps.
 
-**Signed:** Codex (quality engineer) — `YYYY-MM-DD`
+**Signed:** `<name>` (quality engineer) — `YYYY-MM-DD`
+
+---
+
+## Security sign-off
+
+**Decision:** Pass | Pass with documented risks | Fail
+
+**What I reviewed:**
+
+- `SECURITY.md` and `THREAT_MODEL.md` (if present) against the implementation
+- The per-phase security gate results in `TASKS.md`
+- Secret scanning of the tree (no secrets beyond `.env.example` placeholders)
+- Input validation, authorization, and webhook verification where applicable
+- Dependency risk and unsafe file/network/shell behavior
+
+**Notes:**
+
+Describe in 2–6 sentences. If "Pass with documented risks," link each risk explicitly and name its owner and re-review date.
+
+**Signed:** `<name>` (security) — `YYYY-MM-DD`
+
+---
+
+## Code Review sign-off
+
+**Decision:** Approved | Approved with notes | Blocked
+
+**What I reviewed:**
+
+- The per-phase code-review gate results in `TASKS.md`
+- Readability, naming, and consistency across the codebase
+- Duplication, dead code, and over-complex functions
+- Consistency with `standards/coding-standards.md`
+- Any refactors applied or deferred during the build
+
+**Notes:**
+
+Describe in 2–6 sentences. Name any maintainability debt accepted into the release and where it is tracked.
+
+**Signed:** `<name>` (code review) — `YYYY-MM-DD`
 
 ---
 

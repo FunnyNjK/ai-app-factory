@@ -102,4 +102,4 @@ At release readiness (Gate D in `OPERATING_MODEL.md`), the developer signs off w
 - The README and `RUNBOOK.md` are up to date for the current implementation.
 - Any architecture deviations have been raised via the escalation protocol and have an ADR or response trail.
 
-The developer's sign-off is one of four required at Gate D. See `docs/adr/0006-three-agent-signoff.md`.
+The developer's sign-off is one of six required at Gate D (architect, developer, quality engineer, security, code review, product owner). See `docs/adr/0013-configurable-roles-and-tools.md` (which supersedes `docs/adr/0006-three-agent-signoff.md`).

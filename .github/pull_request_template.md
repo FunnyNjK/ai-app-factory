@@ -59,13 +59,15 @@ Rollback plan:
 
 - None / list follow-ups
 
-## Four-party sign-off (Gate D — release candidates only)
+## Six-party sign-off (Gate D — release candidates only)
 
-Required only for PRs that mark a release candidate. Skip for incremental work.
+Required only for PRs that mark a release candidate. Skip for incremental work. Each agent role is driven by the tool the project mapped to it in `.factory-roles.json`.
 
-- [ ] **Architect (Claude)** — implementation matches approved architecture; deviations are documented as ADRs.
-- [ ] **Developer (Cursor)** — acceptance criteria met; tests pass; no hard-coded secrets; README and RUNBOOK current.
-- [ ] **Quality Engineer (Codex)** — test plan executed; critical journeys pass; security and accessibility smoke checks pass; release readiness is Ready or Ready with documented risks.
+- [ ] **Architect** — implementation matches approved architecture; deviations are documented as ADRs.
+- [ ] **Developer** — acceptance criteria met; tests pass; no hard-coded secrets; README and RUNBOOK current.
+- [ ] **Quality Engineer** — test plan executed; critical journeys pass; security and accessibility smoke checks pass; release readiness is Ready or Ready with documented risks.
+- [ ] **Security** — per-phase security gates passed; no secrets in the tree; input validation, authorization, and webhook verification hold; decision is Pass or Pass with documented risks.
+- [ ] **Code Review** — per-phase code-review gates passed; codebase meets the coding standards; accepted maintainability debt is tracked.
 - [ ] **Product owner / technical owner** — business intent satisfied; risks accepted; release authorized.
 
-See `docs/adr/0006-three-agent-signoff.md`.
+See `docs/adr/0013-configurable-roles-and-tools.md`.

@@ -533,4 +533,4 @@ At release readiness (Gate D in `OPERATING_MODEL.md`), the quality engineer sign
 - Observability defaults from `standards/observability-standards.md` are wired and producing useful signal.
 - The release readiness decision is "Ready" or "Ready with documented risks." Documented risks are linked from this sign-off.
 
-The QE sign-off is one of four required at Gate D. See `docs/adr/0006-three-agent-signoff.md`.
+The QE sign-off is one of six required at Gate D (architect, developer, quality engineer, security, code review, product owner). See `docs/adr/0013-configurable-roles-and-tools.md` (which supersedes `docs/adr/0006-three-agent-signoff.md`).

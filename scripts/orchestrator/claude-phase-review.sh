@@ -15,15 +15,19 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck source=lib.sh
 . "$SCRIPT_DIR/lib.sh"
 
-TOOL_NAME="Claude"
+PHASE_ID="${1:?Usage: claude-phase-review.sh <phase-id>   e.g.  claude-phase-review.sh 1}"
+
+# The Architect role's tool and display name come from .factory-roles.json
+# (ADR-0013); defaults to Claude. factory_tool_invoke honors the same
+# RUN_PHASE_* overrides the old inline invocation did.
+ROLE_KEY="architect"
+TOOL=$(factory_role_tool "$ROLE_KEY")
+ROLE_NAME=$(factory_role_name "$ROLE_KEY")
+TOOL_NAME="$(factory_tool_label "$TOOL")"
 TOOL_LOG_PREFIX="claude_phase"
 TOOL_SCRIPT="claude-phase-review.sh"
 
-PHASE_ID="${1:?Usage: claude-phase-review.sh <phase-id>   e.g.  claude-phase-review.sh 1}"
-
-rpl_require_tool claude \
-  "npm install -g @anthropic-ai/claude-code" \
-  "https://docs.anthropic.com/en/docs/claude-code"
+factory_tool_require "$TOOL"
 
 rpl_preflight
 LOG_DIR=$(rpl_init_log_dir)
@@ -31,7 +35,7 @@ LOG_DIR=$(rpl_init_log_dir)
 WALL_TIME=${FACTORY_WALL_TIME_SEC:-1800}
 
 PROMPT=$(cat <<PROMPT_EOF
-You are Claude, the Architect for this AI App Factory project. Your task this session: review Phase ${PHASE_ID} as a whole.
+You are ${ROLE_NAME}, the Architect for this AI App Factory project. Your task this session: review Phase ${PHASE_ID} as a whole.
 
 Steps:
 
@@ -73,23 +77,14 @@ Do not file slice-level code bugs. Those belong to Codex's slice review. If you 
 PROMPT_EOF
 )
 
-# Claude permission flags. The default skips permission prompts for unattended autonomy.
-# Override via RUN_PHASE_CLAUDE_FLAGS in shared/CI environments (e.g. a plan/ask profile).
-CLAUDE_FLAGS_DEFAULT="--dangerously-skip-permissions"
-read -r -a CLAUDE_FLAGS <<<"${RUN_PHASE_CLAUDE_FLAGS:-$CLAUDE_FLAGS_DEFAULT}"
-[ -n "${RUN_PHASE_CLAUDE_MODEL:-}" ] && CLAUDE_FLAGS+=(--model "$RUN_PHASE_CLAUDE_MODEL")
-if [ -n "${RUN_PHASE_CLAUDE_MAX_TURNS:-}" ]; then
-  CLAUDE_FLAGS+=(--max-turns "$RUN_PHASE_CLAUDE_MAX_TURNS")
-fi
-
-log "Invoking Claude for Phase $PHASE_ID review (wall-time cap ${WALL_TIME}s)..."
+log "Invoking $TOOL for Phase $PHASE_ID review (role '$ROLE_NAME', wall-time cap ${WALL_TIME}s)..."
 set +e
-timeout "$WALL_TIME" claude -p "$PROMPT" "${CLAUDE_FLAGS[@]}" 2>&1 | tee "$LOG_DIR/work.log"
-claude_rc=${PIPESTATUS[0]}
+factory_tool_invoke "$TOOL" "$PROMPT" "$LOG_DIR/work.log" "$WALL_TIME"
+claude_rc=$?
 set -e
 
 if [ "$claude_rc" -eq 124 ]; then
-  err "Claude CLI timed out after ${WALL_TIME}s"
+  err "$TOOL timed out after ${WALL_TIME}s"
   factory_log_escalation ESCALATIONS.md "claude" "Phase $PHASE_ID review" "iteration-cap-hit" \
     "Claude CLI exceeded the per-session wall-time cap during phase review." \
     "Single invocation hit timeout at ${WALL_TIME}s. Log: $LOG_DIR/work.log" \
@@ -99,14 +94,14 @@ if [ "$claude_rc" -eq 124 ]; then
   exit 2
 fi
 if [ "$claude_rc" -ne 0 ]; then
-  err "Claude CLI exited with code $claude_rc"
+  err "$TOOL exited with code $claude_rc"
   echo 'FACTORY_STATUS={"role":"claude","action":"phase-review","phase":"'"$PHASE_ID"'","status":"error","details":"cli-failed-rc-'"$claude_rc"'"}'
   exit 1
 fi
 
 STATUS_LINE=$(factory_extract_status_line "$LOG_DIR/work.log")
 if [ -z "$STATUS_LINE" ]; then
-  err "Claude did not emit FACTORY_STATUS line. Check log: $LOG_DIR/work.log"
+  err "$TOOL did not emit FACTORY_STATUS line. Check log: $LOG_DIR/work.log"
   exit 1
 fi
 log "Adapter status: $STATUS_LINE"
@@ -146,6 +141,10 @@ fi
 # The change rides in the same commit as the phase-review approval below.
 if [ "$STATUS_FIELD" = "approved" ]; then
   factory_resolve_escalations_for_slice "." "$PHASE_ID"
+  # Chain to the security gate (ADR-0013): open Phase N security for review now
+  # that the architect's phase review is approved. No-op if the project has no
+  # security gate (older project) — the phase is then fully approved at review.
+  factory_set_phase_item_awaiting TASKS.md phase-security "$PHASE_ID"
 fi
 
 SUBJECT=$(rpl_extract_subject "$LOG_DIR/work.log" "Claude phase ${PHASE_ID} review")

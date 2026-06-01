@@ -170,6 +170,12 @@ while true; do
     claude-phase-review)
       ADAPTER="$SCRIPT_DIR/claude-phase-review.sh"
       ;;
+    security-phase-security)
+      ADAPTER="$SCRIPT_DIR/security-phase-review.sh"
+      ;;
+    codereview-phase-code-review)
+      ADAPTER="$SCRIPT_DIR/codereview-phase-review.sh"
+      ;;
     orchestrator-gate-d-signoff)
       ADAPTER="$SCRIPT_DIR/gate-d-signoff.sh"
       ;;
@@ -188,14 +194,21 @@ while true; do
   case "$rc" in
     0)
       log "Step $OUTER_ITER: adapter completed cleanly."
-      # When a phase review just reached approved, fast-forward main to this
-      # branch's HEAD so main tracks the released state phase by phase.
-      if [ "$KIND" = "phase-review" ] && [ "$(factory_item_status TASKS.md phase-review "$ID")" = "approved" ]; then
-        if ! factory_advance_main "$ORCH_LOG_DIR"; then
-          err "halt: could not fast-forward main after Phase $ID approval (see ESCALATIONS.md)."
-          exit 2
-        fi
-      fi
+      # A phase advances main only when ALL of its gates are approved — the
+      # architect review, plus the security and code-review gates (ADR-0013).
+      # factory_phase_fully_approved treats absent gates (older projects) as
+      # satisfied, so a review-only phase still advances after its review.
+      case "$KIND" in
+        phase-review|phase-security|phase-code-review)
+          if [ "$(factory_item_status TASKS.md "$KIND" "$ID")" = "approved" ] \
+             && factory_phase_fully_approved TASKS.md "$ID"; then
+            if ! factory_advance_main "$ORCH_LOG_DIR"; then
+              err "halt: could not fast-forward main after Phase $ID completion (see ESCALATIONS.md)."
+              exit 2
+            fi
+          fi
+          ;;
+      esac
       ;;
     2)
       # gate-d-signoff ends in human-needed, but its SIGNOFF.md and escalation

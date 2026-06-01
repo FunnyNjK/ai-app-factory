@@ -15,15 +15,19 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck source=lib.sh
 . "$SCRIPT_DIR/lib.sh"
 
-TOOL_NAME="Cursor"
+SLICE_ID="${1:?Usage: cursor-slice.sh <slice-id>   e.g.  cursor-slice.sh 1.2}"
+
+# The Developer role's tool and display name come from .factory-roles.json
+# (ADR-0013); defaults to Cursor. factory_tool_invoke honors the same
+# RUN_PHASE_* overrides the old inline invocation did.
+ROLE_KEY="developer"
+TOOL=$(factory_role_tool "$ROLE_KEY")
+ROLE_NAME=$(factory_role_name "$ROLE_KEY")
+TOOL_NAME="$(factory_tool_label "$TOOL")"
 TOOL_LOG_PREFIX="cursor_slice"
 TOOL_SCRIPT="cursor-slice.sh"
 
-SLICE_ID="${1:?Usage: cursor-slice.sh <slice-id>   e.g.  cursor-slice.sh 1.2}"
-
-rpl_require_tool agent \
-  "curl https://cursor.com/install -fsS | bash" \
-  "https://cursor.com/docs/cli"
+factory_tool_require "$TOOL"
 
 rpl_preflight
 LOG_DIR=$(rpl_init_log_dir)
@@ -31,7 +35,7 @@ LOG_DIR=$(rpl_init_log_dir)
 WALL_TIME=${FACTORY_WALL_TIME_SEC:-1800}
 
 PROMPT=$(cat <<PROMPT_EOF
-You are Cursor, the Developer for this AI App Factory project. Your task this session: implement slice ${SLICE_ID} from TASKS.md.
+You are ${ROLE_NAME}, the Developer for this AI App Factory project. Your task this session: implement slice ${SLICE_ID} from TASKS.md.
 
 Steps:
 
@@ -57,22 +61,14 @@ Do not modify slices other than ${SLICE_ID}. Do not start a different slice. Do 
 PROMPT_EOF
 )
 
-# Cursor CLI flags. The default disables the sandbox so the agent can write files and the
-# orchestrator can commit unattended (the factory's autonomy model). Override via
-# RUN_PHASE_CURSOR_FLAGS to run Cursor under a tighter profile in shared/CI environments;
-# keep --output-format text so the FACTORY_STATUS line stays parseable.
-CURSOR_FLAGS_DEFAULT="--trust --force --sandbox disabled --output-format text"
-read -r -a CURSOR_FLAGS <<<"${RUN_PHASE_CURSOR_FLAGS:-$CURSOR_FLAGS_DEFAULT}"
-[ -n "${RUN_PHASE_CURSOR_MODEL:-}" ] && CURSOR_FLAGS+=(--model "$RUN_PHASE_CURSOR_MODEL")
-
-log "Invoking Cursor for slice $SLICE_ID (wall-time cap ${WALL_TIME}s)..."
+log "Invoking $TOOL for slice $SLICE_ID (role '$ROLE_NAME', wall-time cap ${WALL_TIME}s)..."
 set +e
-timeout "$WALL_TIME" agent -p "${CURSOR_FLAGS[@]}" -- "$PROMPT" 2>&1 | tee "$LOG_DIR/work.log"
-agent_rc=${PIPESTATUS[0]}
+factory_tool_invoke "$TOOL" "$PROMPT" "$LOG_DIR/work.log" "$WALL_TIME"
+agent_rc=$?
 set -e
 
 if [ "$agent_rc" -eq 124 ]; then
-  err "Cursor CLI timed out after ${WALL_TIME}s"
+  err "$TOOL timed out after ${WALL_TIME}s"
   factory_log_escalation ESCALATIONS.md "cursor" "slice $SLICE_ID" "iteration-cap-hit" \
     "Cursor CLI exceeded the per-session wall-time cap." \
     "Single invocation hit timeout at ${WALL_TIME}s. Log: $LOG_DIR/work.log" \
@@ -82,7 +78,7 @@ if [ "$agent_rc" -eq 124 ]; then
   exit 2
 fi
 if [ "$agent_rc" -ne 0 ]; then
-  err "Cursor CLI exited with code $agent_rc"
+  err "$TOOL exited with code $agent_rc"
   echo 'FACTORY_STATUS={"role":"cursor","action":"slice","slice":"'"$SLICE_ID"'","status":"error","details":"cli-failed-rc-'"$agent_rc"'"}'
   exit 1
 fi

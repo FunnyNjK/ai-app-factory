@@ -344,16 +344,18 @@ The release candidate has:
 - Cost estimate reviewed against the live cost shape (`templates/COST_ESTIMATE.md`)
 - Rollback plan documented
 
-#### Definition of Success — four-party sign-off
+#### Definition of Success — six-party sign-off
 
-A project is **release-ready** only when each of the four parties below has signed off in writing inside the PR or release artifact. A project is **successful** only when all four sign-offs are present and the launch has met its release criteria.
+A project is **release-ready** only when each of the six parties below has signed off in writing inside the PR or release artifact. A project is **successful** only when all six sign-offs are present and the launch has met its release criteria. Each agent role is driven by whichever tool the project mapped to it in `.factory-roles.json` (`docs/adr/0013-configurable-roles-and-tools.md`); the names below are the default roles.
 
-1. **Claude (Architect)** — confirms the implementation matches the approved architecture, no silent design deviations, ADRs cover any deviations.
-2. **Cursor (Developer)** — confirms acceptance criteria met, tests pass, no hard-coded secrets, runbook and README up to date.
-3. **Codex (Quality Engineer)** — confirms test plan executed, critical journeys pass, security and accessibility smoke checks pass, release readiness decision is "Ready" or "Ready with documented risks."
-4. **Human team (Product owner / technical owner)** — confirms business intent satisfied, documented risks accepted, release authorized.
+1. **Architect** — confirms the implementation matches the approved architecture, no silent design deviations, ADRs cover any deviations.
+2. **Developer** — confirms acceptance criteria met, tests pass, no hard-coded secrets, runbook and README up to date.
+3. **Quality Engineer** — confirms test plan executed, critical journeys pass, security and accessibility smoke checks pass, release readiness decision is "Ready" or "Ready with documented risks."
+4. **Security** — confirms the per-phase security gates passed, no secrets in the tree, input validation / authorization / webhook verification hold, decision is "Pass" or "Pass with documented risks."
+5. **Code Review** — confirms the per-phase code-review gates passed, the codebase meets the coding standards, and any accepted maintainability debt is tracked.
+6. **Human team (Product owner / technical owner)** — confirms business intent satisfied, documented risks accepted, release authorized.
 
-A blocked sign-off must name a specific blocker. Vague concerns are not blockers. See `docs/adr/0006-three-agent-signoff.md` for the decision behind this gate.
+A blocked sign-off must name a specific blocker. Vague concerns are not blockers. See `docs/adr/0013-configurable-roles-and-tools.md` (which supersedes `docs/adr/0006-three-agent-signoff.md`) for the decision behind this gate.
 
 ### Gate E — Post-release review complete
 

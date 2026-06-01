@@ -12,7 +12,7 @@
 
 ## Status
 
-Accepted
+Superseded by [ADR-0013](0013-configurable-roles-and-tools.md). The principle stands — Gate D requires independent agent sign-offs plus the human product owner — but the team grew from three agents to five (architect, developer, quality engineer, security, code review), making Gate D a six-party sign-off.
 
 ## Context
 

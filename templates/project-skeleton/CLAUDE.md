@@ -60,7 +60,7 @@ Fill these in during `/intake`. Do not start `/design` until the snapshot is com
 - Risk-based validation
 - Release readiness review
 
-For the canonical role definitions and the four-party Gate D sign-off, see the factory's `OPERATING_MODEL.md` and `docs/adr/0006-three-agent-signoff.md`.
+This project is delivered by five agent roles — Architect, Developer, Tester, Security, and Code Review — plus the product owner. Which tool drives each role (and its display name) is set in `.factory-roles.json` (see `<factory-path>/docs/adr/0013-configurable-roles-and-tools.md`). For the canonical role definitions and the six-party Gate D sign-off, see the factory's `OPERATING_MODEL.md` and `docs/adr/0013-configurable-roles-and-tools.md`.
 
 ---
 
@@ -71,7 +71,7 @@ Use the same gates the factory defines (Gate A, B, C, D, E). Do not advance to t
 - **Gate A — Ready for Architecture:** business goal, target users, initial scope, success criteria, major constraints.
 - **Gate B — Ready for Implementation:** scope, tech stack, component design, data design, API/integration design, security model, deployment model, acceptance criteria, known risks.
 - **Gate C — Ready for QE:** working local setup, required features complete, tests added, no hardcoded secrets, README updated, known deviations documented.
-- **Gate D — Ready for Release:** passing tests, critical journeys verified, integrations verified, security smoke pass, accessibility baseline, observability wired, cost reviewed, rollback plan, **four-party sign-off recorded in `SIGNOFF.md`**.
+- **Gate D — Ready for Release:** passing tests, critical journeys verified, integrations verified, security smoke pass, accessibility baseline, observability wired, cost reviewed, rollback plan, **six-party sign-off recorded in `SIGNOFF.md`**.
 - **Gate E — Post-release review:** what worked, what broke, what should feed back into the factory.
 
 ---
@@ -156,7 +156,7 @@ When in doubt, ask a better question before designing.
 - `docs/adr/00XX-<title>.md` — ADRs for every major decision (you)
 - `RUNBOOK.md` — operational runbook (Cursor, during implementation)
 - `RELEASE_CHECKLIST.md` — release readiness (Cursor + Codex, before Gate D)
-- `SIGNOFF.md` — four-party Gate D sign-off (all parties, at release)
+- `SIGNOFF.md` — six-party Gate D sign-off (all parties, at release)
 
 The starter copies of every template come from `<factory-path>/templates/`.
 
@@ -180,7 +180,7 @@ Never silently change the design. Never silently dismiss the concern.
 - You do not write application code. That is Cursor's job.
 - You do not write tests beyond illustrative examples. That is Cursor and Codex.
 - You do not deploy. That is the product owner with Cursor's CI/CD pipeline.
-- You do not approve release readiness alone. That requires four-party sign-off.
+- You do not approve release readiness alone. That requires six-party sign-off.
 
 ---
 
@@ -202,7 +202,7 @@ When you pick up a phase:
    - The phase advertises a user journey that no single slice owns end-to-end.
    - Observability defaults from `<factory-path>/standards/observability-standards.md` are missing.
    - The threat model has new gaps after this phase's code landed.
-4. If the phase is sound, set the Phase review entry in `TASKS.md` to `approved`. The next phase becomes available.
+4. If the phase is sound, set the Phase review entry in `TASKS.md` to `approved`. This opens the **security gate**, then the **code-review gate** (ADR-0013); all three must be `approved` before the next phase becomes available.
 5. If the phase has issues, file **phase-level sub-tasks** under the Phase review entry in `TASKS.md`, route the relevant slices back to `in-progress`, and increment the phase iteration counter.
 
 ## Budget caps

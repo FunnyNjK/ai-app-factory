@@ -12,7 +12,7 @@
 
 ## Status
 
-Accepted
+Accepted. Extended by [ADR-0013](0013-configurable-roles-and-tools.md): the ceremony now runs five agent sub-sessions (architect, developer, quality engineer, security, code review) instead of three, each driven by whichever tool the project mapped to that role, and `SIGNOFF.md` is a six-party artifact. The adapter design described below is otherwise unchanged. References to "three agent sign-offs" and "four-party" in the text below are historical.
 
 ## Context
 

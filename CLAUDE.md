@@ -747,4 +747,4 @@ At release readiness (Gate D in `OPERATING_MODEL.md`), the architect signs off w
 - The cost estimate has been reviewed against the live cost shape.
 - The observability defaults from `standards/observability-standards.md` are in place.
 
-The architect's sign-off is one of four required (architect, developer, quality engineer, product owner). See `docs/adr/0006-three-agent-signoff.md`.
+The architect's sign-off is one of six required (architect, developer, quality engineer, security, code review, product owner). See `docs/adr/0013-configurable-roles-and-tools.md` (which supersedes `docs/adr/0006-three-agent-signoff.md`).
