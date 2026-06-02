@@ -56,7 +56,7 @@ The repo tracks the executable bit in git, so future clones inherit it; this is 
 - **In the factory root** — a kickoff menu: factory health, agent-CLI detection, "new project" (with the role wizard), and opening an existing project's build panel.
 - **In a scaffolded project** — a build menu: status and the resolved next action, run the next step, autopilot (with a preflight + confirm), validate, a read-only factory-drift check (`refresh-project.sh`), open escalations, settings, the role config, and a Claude session primed with the slash command that fits the stage (`/intake` or `/next-slice`).
 
-It runs the same audited scripts documented below — nothing happens in the launcher that you cannot also do by hand. The plain numbered menus need no extra runtime; if `fzf` or `whiptail` is installed it uses that for a nicer picker and otherwise degrades to the numbered prompt. Build-menu settings (push, the Codex sandbox flag) persist per project in a gitignored `.factory-settings`.
+It runs the same audited scripts documented below — nothing happens in the launcher that you cannot also do by hand. The UI renders inline in the terminal, Claude Code-style: an accent `❯` arrow-key picker (digits jump straight to an option, `q` cancels), a rounded banner, and a short pause after each action so its output stays readable. It needs no extra runtime — no `whiptail`, no `fzf` — and non-interactive callers (pipes, CI) get a plain numbered prompt. Build-menu settings (push, the Codex sandbox flag) persist per project in a gitignored `.factory-settings`.
 
 It also answers "what do I run next?" non-interactively — handy in scripts and over SSH:
 

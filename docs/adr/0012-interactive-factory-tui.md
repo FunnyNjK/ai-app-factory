@@ -34,6 +34,8 @@ It is a **thin convenience veneer**: all real logic stays in the existing script
 
 **Baseline is dependency-free** — numbered `read`-based menus that work over SSH with no extra runtime. It may opt into `whiptail`/`fzf` for a nicer boxed UI when those are present, but must degrade to the plain menu when they are not.
 
+> **Amended 2026-06-01 — see "Amendment: inline Claude-style UI" below.** The `whiptail`/`fzf` opt-in is withdrawn; the nicer UI is now built in and still dependency-free.
+
 Menu spec:
 
 **Factory-root context** (kickoff):
@@ -50,6 +52,23 @@ Menu spec:
 - View escalations / `TASKS.md` · Validate (`scripts/validate-project.sh`) · Open a Claude session.
 
 A non-interactive path (`factory.sh --next` / `--status`) prints the resolved next command and current state without entering a menu — testable, and doubles as the shell answer to "what do I run next?".
+
+### Amendment: inline Claude-style UI (2026-06-01)
+
+The first interactive run on the Ubuntu host (the original follow-up condition for accepting this ADR) surfaced a defect and a product-owner request:
+
+- **Defect:** with `whiptail` installed, the menu is a fullscreen dialog. Every action's output prints to the terminal *behind* the dialog; the operator sees a "blip" of output, then the menu redraw covers it. The output only becomes readable after quitting the launcher.
+- **Request:** the launcher should look and feel like Claude Code's own CLI, not like a 1990s installer dialog.
+
+Both have one fix, so the picker decision is amended:
+
+1. **External pickers are removed.** `factory.sh` no longer invokes `whiptail` or `fzf` under any condition.
+2. **The picker is built in and renders inline.** An arrow-key selector in the Claude Code style — accent-orange `❯` pointer (xterm color 173, Claude's terracotta), dim secondary text, `↑`/`↓`/`j`/`k` to move, digits to jump-select, Enter to choose, `q`/Esc to cancel. It draws *below* the scrollback, never over it, and collapses to a single `❯ <choice>` line after selection.
+3. **Action output is never hidden.** After each output-producing action, the launcher pauses ("press Enter to return to the menu") so the operator reads the output before the menu redraws. Status renders once on menu entry, not on every loop iteration.
+4. **A rounded banner box** (Claude Code welcome style, `✻` marker) opens each menu context.
+5. **The non-interactive contract is unchanged.** Pipes, CI, tests, and dumb terminals get the same numbered fallback as before: title and labels to stderr, chosen key to stdout. Colors obey `NO_COLOR` and TTY detection.
+
+The baseline remains dependency-free — the nicer UI now needs nothing beyond bash and ANSI escapes, which is *more* dependency-free than the original opt-in design.
 
 ## Alternatives considered
 
@@ -82,7 +101,8 @@ A non-interactive path (`factory.sh --next` / `--status`) prints the resolved ne
 - [x] Implemented `factory.sh` under `scripts/`; it reuses `factory_next_action` from `scripts/orchestrator/lib.sh`, and the role-to-adapter map now lives in one place — `factory_adapter_for` in `lib.sh`, shared with `orchestrate.sh` so the two cannot drift.
 - [x] Non-interactive `--next` / `--status` implemented (now also accepting an optional project-path argument), covered by a dependency-free bash test suite under `scripts/test/` that CI runs in a `Script Tests` job.
 - [x] Documented the launcher in `docs/playbooks/running-a-project.md`; registered in `MANIFEST.md` and `scripts/validate-factory.mjs` `requiredFiles`.
-- [ ] Promote this ADR to Accepted after a first interactive run on the Ubuntu host (where the `fzf`/`whiptail` pickers and the full menu paths can be exercised live).
+- [x] First interactive run on the Ubuntu host completed (2026-06-01). Findings: the `whiptail` fullscreen dialog hid action output; the product owner asked for a Claude Code look and feel. Both addressed by the inline-UI amendment above.
+- [ ] Promote this ADR to Accepted after the inline picker is validated in a live run on the Ubuntu host (arrow keys, digit jump, cancel, the post-action pause, and output staying visible).
 
 ## References
 

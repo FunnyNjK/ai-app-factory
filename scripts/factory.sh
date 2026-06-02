@@ -10,6 +10,11 @@
 #   factory.sh --status [dir]  print current project status (next action + escalations)
 #   factory.sh -h|--help       show this help
 #
+# The interactive UI renders INLINE in the terminal (Claude Code look and feel:
+# accent ❯ pointer, arrow-key pickers, rounded banner). Action output always
+# stays visible in the scrollback — no fullscreen dialogs. Non-interactive
+# callers (pipes, CI, tests) get plain numbered prompts.
+#
 # This is a thin launcher: all real work stays in the existing scripts and in
 # the claude/codex/agent CLIs. See docs/adr/0012-interactive-factory-tui.md.
 
@@ -44,6 +49,68 @@ SETTING_CODEX_SANDBOX="${RUN_PHASE_CODEX_APPROVAL_FLAG:-}"
 
 say() { printf '%s\n' "$*"; }
 hr()  { printf -- '------------------------------------------------------------\n'; }
+
+# --- UI helpers (Claude Code look and feel — ADR-0012 amendment) -----------
+#
+# Everything renders INLINE in the terminal: no fullscreen dialogs, no external
+# picker. Output from every action stays in the scrollback with the menu drawn
+# below it, so nothing is ever hidden behind a dialog. Styling follows Claude
+# Code: a rounded banner box, the ✻ marker, an accent-orange ❯ pointer, and dim
+# secondary text. Colors engage only on capable interactive terminals.
+
+# ui_init — set the C_* style variables. Colors require: stderr is a TTY, TERM
+# is not dumb, and NO_COLOR is unset (https://no-color.org). Safe when sourced
+# by tests: everything degrades to empty strings.
+ui_init() {
+  UI_COLOR=0
+  if [ -t 2 ] && [ "${TERM:-dumb}" != "dumb" ] && [ -z "${NO_COLOR:-}" ]; then
+    UI_COLOR=1
+  fi
+  if [ "$UI_COLOR" = "1" ]; then
+    C_ACCENT=$'\033[38;5;173m'  # Claude's terracotta orange (#D97757 ~ xterm 173)
+    C_DIM=$'\033[2m'
+    C_BOLD=$'\033[1m'
+    C_RESET=$'\033[0m'
+  else
+    C_ACCENT='' C_DIM='' C_BOLD='' C_RESET=''
+  fi
+}
+ui_init
+
+# ui_banner <title> [subtitle ...] — rounded box in the Claude Code welcome
+# style, rendered to stderr. Width adapts to the longest line.
+ui_banner() {
+  local title="$1"; shift
+  local w=$(( ${#title} + 4 )) line
+  for line in "$@"; do
+    [ $(( ${#line} + 4 )) -gt "$w" ] && w=$(( ${#line} + 4 ))
+  done
+  {
+    printf '%s╭' "$C_ACCENT"
+    printf '─%.0s' $(seq 1 "$w")
+    printf '╮%s\n' "$C_RESET"
+    printf '%s│%s %s✻%s %s%s%*s%s│%s\n' \
+      "$C_ACCENT" "$C_RESET" "$C_ACCENT" "$C_RESET" "$C_BOLD" "$title" \
+      $(( w - ${#title} - 3 )) "" "$C_ACCENT" "$C_RESET"
+    for line in "$@"; do
+      printf '%s│%s   %s%s%s%*s%s│%s\n' \
+        "$C_ACCENT" "$C_RESET" "$C_DIM" "$line" "$C_RESET" \
+        $(( w - ${#line} - 3 )) "" "$C_ACCENT" "$C_RESET"
+    done
+    printf '%s╰' "$C_ACCENT"
+    printf '─%.0s' $(seq 1 "$w")
+    printf '╯%s\n' "$C_RESET"
+  } 1>&2
+}
+
+# ui_pause — hold the screen so action output stays readable before the menu
+# redraws. Interactive terminals only; a no-op for tests, pipes, and CI.
+ui_pause() {
+  { [ -t 0 ] && [ -t 2 ]; } || return 0
+  local _x
+  printf '\n%s  press Enter to return to the menu …%s ' "$C_DIM" "$C_RESET" 1>&2
+  IFS= read -r _x || true
+}
 
 # detect_tools_report — print which of the four agent CLIs are on PATH (ADR-0013).
 detect_tools_report() {
@@ -261,7 +328,7 @@ run_next() {
 
 cmd_status() {
   hr
-  say "Project: $(basename "$PWD")"
+  say "${C_BOLD}Project:${C_RESET} $(basename "$PWD")"
   [ -f .factory-version ] && sed 's/^/  /' .factory-version 2>/dev/null || true
   if [ -f TASKS.md ]; then
     local total
@@ -271,7 +338,7 @@ cmd_status() {
   show_roles
   cmd_next || true
   if [ -f ESCALATIONS.md ] && sed -n '/^## Open/,/^## Resolved/p' ESCALATIONS.md | grep -qE '^### ESC-'; then
-    say "  ** open escalations present — see ESCALATIONS.md **"
+    say "  ${C_ACCENT}** open escalations present — see ESCALATIONS.md **${C_RESET}"
   fi
   hr
 }
@@ -331,38 +398,99 @@ menu_settings() {
 
 # _select <title> <prompt> <key1> <label1> [<key2> <label2> ...]
 # Single-choice menu. Echoes the chosen KEY on stdout and renders the menu UI on
-# stderr, so a caller can capture the key with $(...). Uses fzf, then whiptail,
-# when present (a boxed/fuzzy picker), and otherwise falls back to a numbered
-# `read` prompt that needs no extra runtime (ADR-0012). Returns nonzero on cancel.
+# stderr, so a caller can capture the key with $(...). Returns nonzero on cancel.
+#
+# Interactive terminals get an inline, Claude Code-style picker: an accent ❯
+# pointer, ↑/↓ (or j/k) to move, a digit to jump straight to that option, Enter
+# to choose, q or Esc to cancel. The picker draws BELOW the current scrollback
+# (never over it — the whiptail fullscreen dialog hid action output, which is
+# why it was removed; see the ADR-0012 amendment) and collapses to a single
+# "❯ <label>" line once chosen.
+#
+# Non-interactive callers (tests, pipes, CI, dumb terminals) get the
+# dependency-free numbered fallback: title + labels to stderr, one line read
+# from stdin, chosen key to stdout.
 _select() {
   local title="$1" prompt="$2"; shift 2
   local keys=() labels=()
   while [ "$#" -ge 2 ]; do keys+=("$1"); labels+=("$2"); shift 2; done
   local i sel
 
-  if command -v fzf >/dev/null 2>&1; then
-    local lines=""
-    for i in "${!keys[@]}"; do lines+="${keys[$i]}) ${labels[$i]}"$'\n'; done
-    sel=$(printf '%s' "$lines" | fzf --height=40% --reverse --header="$title" --prompt="$prompt") || return 1
-    printf '%s\n' "${sel%%)*}"
-    return 0
-  fi
-
-  if command -v whiptail >/dev/null 2>&1; then
-    local args=()
-    for i in "${!keys[@]}"; do args+=("${keys[$i]}" "${labels[$i]}"); done
-    sel=$(whiptail --title "$title" --menu "$prompt" 20 76 "${#keys[@]}" "${args[@]}" 3>&1 1>&2 2>&3) || return 1
+  # Fallback path: anything non-interactive.
+  if [ ! -t 0 ] || [ ! -t 2 ] || [ "${TERM:-dumb}" = "dumb" ]; then
+    {
+      say "$title"
+      for i in "${!keys[@]}"; do say "  ${keys[$i]}) ${labels[$i]}"; done
+    } 1>&2
+    read -rp "$prompt" sel || return 1
     printf '%s\n' "$sel"
     return 0
   fi
 
-  # Plain fallback — menu UI to stderr, chosen key to stdout.
-  {
-    say "$title"
-    for i in "${!keys[@]}"; do say "  ${keys[$i]}) ${labels[$i]}"; done
-  } 1>&2
-  read -rp "$prompt" sel || return 1
-  printf '%s\n' "$sel"
+  # Interactive inline picker.
+  local n=${#keys[@]} cur=0 ch rest picked=-1
+
+  # The picker hides the terminal cursor while live; make sure it comes back
+  # even on Ctrl-C. (Menu callers run _select via $(...), so this trap lives in
+  # that subshell; registering it at script level would also be harmless.)
+  trap 'printf "\033[?25h" 1>&2' EXIT INT TERM
+
+  # Draw the option list (pointer on $cur). Every line is fully redrawn, so a
+  # repaint only needs to move the cursor back up $n lines.
+  _select_draw() {
+    local j
+    for (( j = 0; j < n; j++ )); do
+      printf '\033[2K' 1>&2  # clear the line before redrawing it
+      if [ "$j" -eq "$cur" ]; then
+        printf ' %s❯ %s. %s%s\n' "$C_ACCENT" "${keys[$j]}" "${labels[$j]}" "$C_RESET" 1>&2
+      else
+        printf '   %s%s. %s%s\n' "$C_DIM" "${keys[$j]}" "${labels[$j]}" "$C_RESET" 1>&2
+      fi
+    done
+  }
+
+  printf '\033[?25l' 1>&2  # hide cursor while the picker is live
+  printf '\n %s%s%s  %s↑/↓ move · Enter select · q cancel%s\n' \
+    "$C_BOLD" "$title" "$C_RESET" "$C_DIM" "$C_RESET" 1>&2
+  _select_draw
+
+  while true; do
+    IFS= read -rsn1 ch || { picked=-1; break; }
+    if [ "$ch" = $'\033' ]; then
+      # Arrow keys arrive as ESC [ A/B; a bare Esc (timeout) cancels.
+      rest=""
+      IFS= read -rsn2 -t 1 rest || rest=""
+      case "$rest" in
+        '[A') ch="UP" ;;
+        '[B') ch="DOWN" ;;
+        *)    ch="CANCEL" ;;
+      esac
+    fi
+    case "$ch" in
+      UP|k)    cur=$(( (cur - 1 + n) % n )) ;;
+      DOWN|j)  cur=$(( (cur + 1) % n )) ;;
+      "")      picked=$cur; break ;;            # Enter
+      q|Q|CANCEL) picked=-1; break ;;
+      *)
+        # A digit (or any key string) that matches an option key jumps + selects.
+        for i in "${!keys[@]}"; do
+          if [ "${keys[$i]}" = "$ch" ]; then cur=$i; picked=$cur; break; fi
+        done
+        [ "$picked" -ge 0 ] && break ;;
+    esac
+    printf '\033[%dA' "$n" 1>&2
+    _select_draw
+  done
+
+  # Collapse the picker (the title/hint line + n option lines) and restore the
+  # cursor. The blank spacer line above the title is left in place.
+  printf '\033[%dA\033[J\033[?25h' $(( n + 1 )) 1>&2
+  if [ "$picked" -lt 0 ]; then
+    printf ' %s❯ cancelled%s\n' "$C_DIM" "$C_RESET" 1>&2
+    return 1
+  fi
+  printf ' %s❯%s %s\n' "$C_ACCENT" "$C_RESET" "${labels[$picked]}" 1>&2
+  printf '%s\n' "${keys[$picked]}"
 }
 
 # run_autopilot — preflight, then launch the autonomous orchestrator. Shows the
@@ -470,10 +598,13 @@ menu_project() {
   load_settings
   apply_settings
   local choice push_state
+  # Full status once on entry. Inside the loop the menu redraws compactly so
+  # action output above it stays in view (ADR-0012 amendment).
+  ui_banner "$(basename "$PWD")" "factory project · $(basename "$FACTORY_ROOT")"
+  cmd_status
   while true; do
-    cmd_status
-    if [ "$SETTING_NO_PUSH" = "1" ]; then push_state="OFF (local only)"; else push_state="ON"; fi
-    choice=$(_select "Build menu  [push: $push_state]" "> " \
+    if [ "$SETTING_NO_PUSH" = "1" ]; then push_state="push OFF (local only)"; else push_state="push ON"; fi
+    choice=$(_select "$(basename "$PWD")  ·  $push_state" "> " \
       1 "Refresh status" \
       2 "Run next step" \
       3 "Autopilot (orchestrate.sh, until it needs you)" \
@@ -485,12 +616,12 @@ menu_project() {
       9 "Open a Claude session" \
       0 "Quit") || return 0
     case "$choice" in
-      1) : ;;
-      2) run_next || say "(step exited non-zero — see the log above)" ;;
-      3) run_autopilot ;;
-      4) "$SCRIPT_DIR/validate-project.sh" . || true ;;
-      5) "$SCRIPT_DIR/refresh-project.sh" . || true ;;
-      6) if [ -f ESCALATIONS.md ]; then sed -n '/^## Open/,/^## Resolved/p' ESCALATIONS.md; else say "no ESCALATIONS.md"; fi ;;
+      1) cmd_status ;;
+      2) run_next || say "(step exited non-zero — see the log above)"; ui_pause ;;
+      3) run_autopilot; ui_pause ;;
+      4) "$SCRIPT_DIR/validate-project.sh" . || true; ui_pause ;;
+      5) "$SCRIPT_DIR/refresh-project.sh" . || true; ui_pause ;;
+      6) if [ -f ESCALATIONS.md ]; then sed -n '/^## Open/,/^## Resolved/p' ESCALATIONS.md; else say "no ESCALATIONS.md"; fi; ui_pause ;;
       7) menu_settings ;;
       8) configure_roles . ;;
       9) open_claude_session ;;
@@ -502,11 +633,10 @@ menu_project() {
 
 menu_factory() {
   # Report which agent CLIs were found once, on entry (ADR-0013).
-  say ""; hr; say "AI App Factory"; say "  $FACTORY_ROOT"; hr
+  ui_banner "AI App Factory" "$FACTORY_ROOT"
   detect_tools_report
   local choice defp p
   while true; do
-    say ""
     choice=$(_select "AI App Factory" "> " \
       1 "Factory status" \
       2 "Detect agent CLIs (claude / gemini / cursor / codex)" \
@@ -515,10 +645,10 @@ menu_factory() {
       5 "Open a project (build menu)" \
       0 "Quit") || exit 0
     case "$choice" in
-      1) "$SCRIPT_DIR/factory-status.sh" || true ;;
-      2) hr; detect_tools_report; hr ;;
-      3) "$SCRIPT_DIR/check-cli-tools.sh" || true ;;
-      4) new_project ;;
+      1) "$SCRIPT_DIR/factory-status.sh" || true; ui_pause ;;
+      2) hr; detect_tools_report; hr; ui_pause ;;
+      3) "$SCRIPT_DIR/check-cli-tools.sh" || true; ui_pause ;;
+      4) new_project; ui_pause ;;
       5) defp=$(default_project_path)
          read -rp "Project path [${defp}]: " p || true
          p="${p:-$defp}"
