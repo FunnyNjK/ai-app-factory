@@ -6,9 +6,9 @@
 #   - inside a scaffolded project folder -> build menu (status, next step, autopilot, settings)
 #
 # Non-interactive (scriptable, testable):
-#   factory.sh --next      print the next command to run in the current project
-#   factory.sh --status    print current project status (next action + escalations)
-#   factory.sh -h|--help   show this help
+#   factory.sh --next [dir]    print the next command to run (project DIR, else $PWD)
+#   factory.sh --status [dir]  print current project status (next action + escalations)
+#   factory.sh -h|--help       show this help
 #
 # This is a thin launcher: all real work stays in the existing scripts and in
 # the claude/codex/agent CLIs. See docs/adr/0012-interactive-factory-tui.md.
@@ -218,19 +218,10 @@ default_project_path() {
   done < <(ls -dt "$parent"/*/ 2>/dev/null)
 }
 
-# Map an orchestrator role+kind to its adapter script (mirrors orchestrate.sh's dispatch).
-adapter_for() {
-  case "$1-$2" in
-    cursor-slice)                  echo "cursor-slice.sh" ;;
-    codex-slice)                   echo "codex-slice-review.sh" ;;
-    codex-slice-verify)            echo "codex-slice-verify.sh" ;;
-    claude-phase-review)           echo "claude-phase-review.sh" ;;
-    security-phase-security)       echo "security-phase-review.sh" ;;
-    codereview-phase-code-review)  echo "codereview-phase-review.sh" ;;
-    orchestrator-gate-d-signoff)   echo "gate-d-signoff.sh" ;;
-    *)                             echo "" ;;
-  esac
-}
+# Map an orchestrator role+kind to its adapter script. Delegates to
+# factory_adapter_for in lib.sh — the single source of truth for the dispatch
+# map, shared with orchestrate.sh so the two cannot drift (ADR-0012 follow-up).
+adapter_for() { factory_adapter_for "$1" "$2"; }
 
 # Echo "ROLE KIND ID" for the project in $PWD ("error - -" / "none - -" at the edges).
 next_action_raw() {
@@ -285,6 +276,33 @@ cmd_status() {
   hr
 }
 
+# Per-project persisted settings file (gitignored). Holds the operator's push
+# and Codex-sandbox choices so they survive across launcher sessions.
+SETTINGS_FILE=".factory-settings"
+
+# load_settings — read SETTING_* from ./.factory-settings if present. The file
+# is the persisted per-project choice and wins over the environment defaults
+# captured at launch. No-op when the file is absent (env/defaults stand).
+load_settings() {
+  [ -f "$SETTINGS_FILE" ] || return 0
+  local key val
+  while IFS='=' read -r key val; do
+    case "$key" in
+      RUN_PHASE_NO_PUSH)             SETTING_NO_PUSH="$val" ;;
+      RUN_PHASE_CODEX_APPROVAL_FLAG) SETTING_CODEX_SANDBOX="$val" ;;
+    esac
+  done <"$SETTINGS_FILE"
+  return 0
+}
+
+# save_settings — persist SETTING_* to ./.factory-settings (atomic write).
+save_settings() {
+  {
+    printf 'RUN_PHASE_NO_PUSH=%s\n' "$SETTING_NO_PUSH"
+    printf 'RUN_PHASE_CODEX_APPROVAL_FLAG=%s\n' "$SETTING_CODEX_SANDBOX"
+  } >"$SETTINGS_FILE.tmp" && mv "$SETTINGS_FILE.tmp" "$SETTINGS_FILE"
+}
+
 apply_settings() {
   export RUN_PHASE_NO_PUSH="$SETTING_NO_PUSH"
   if [ -n "$SETTING_CODEX_SANDBOX" ]; then
@@ -297,18 +315,96 @@ apply_settings() {
 menu_settings() {
   while true; do
     say ""
-    say "Settings (apply to steps launched from this menu):"
+    say "Settings (saved to ./.factory-settings — persist across launcher sessions):"
     say "  1) RUN_PHASE_NO_PUSH = $SETTING_NO_PUSH   (1 = commit locally, skip git push)"
     say "  2) Codex sandbox flag = ${SETTING_CODEX_SANDBOX:-<unset>}"
     say "  0) Back"
     read -rp "> " s || return 0
     case "$s" in
-      1) if [ "$SETTING_NO_PUSH" = "1" ]; then SETTING_NO_PUSH=0; else SETTING_NO_PUSH=1; fi; apply_settings ;;
-      2) read -rp "Codex sandbox flag (e.g. --sandbox danger-full-access; blank to clear): " SETTING_CODEX_SANDBOX || true; apply_settings ;;
+      1) if [ "$SETTING_NO_PUSH" = "1" ]; then SETTING_NO_PUSH=0; else SETTING_NO_PUSH=1; fi; apply_settings; save_settings ;;
+      2) read -rp "Codex sandbox flag (e.g. --sandbox danger-full-access; blank to clear): " SETTING_CODEX_SANDBOX || true; apply_settings; save_settings ;;
       0) return 0 ;;
       *) say "?" ;;
     esac
   done
+}
+
+# _select <title> <prompt> <key1> <label1> [<key2> <label2> ...]
+# Single-choice menu. Echoes the chosen KEY on stdout and renders the menu UI on
+# stderr, so a caller can capture the key with $(...). Uses fzf, then whiptail,
+# when present (a boxed/fuzzy picker), and otherwise falls back to a numbered
+# `read` prompt that needs no extra runtime (ADR-0012). Returns nonzero on cancel.
+_select() {
+  local title="$1" prompt="$2"; shift 2
+  local keys=() labels=()
+  while [ "$#" -ge 2 ]; do keys+=("$1"); labels+=("$2"); shift 2; done
+  local i sel
+
+  if command -v fzf >/dev/null 2>&1; then
+    local lines=""
+    for i in "${!keys[@]}"; do lines+="${keys[$i]}) ${labels[$i]}"$'\n'; done
+    sel=$(printf '%s' "$lines" | fzf --height=40% --reverse --header="$title" --prompt="$prompt") || return 1
+    printf '%s\n' "${sel%%)*}"
+    return 0
+  fi
+
+  if command -v whiptail >/dev/null 2>&1; then
+    local args=()
+    for i in "${!keys[@]}"; do args+=("${keys[$i]}" "${labels[$i]}"); done
+    sel=$(whiptail --title "$title" --menu "$prompt" 20 76 "${#keys[@]}" "${args[@]}" 3>&1 1>&2 2>&3) || return 1
+    printf '%s\n' "$sel"
+    return 0
+  fi
+
+  # Plain fallback — menu UI to stderr, chosen key to stdout.
+  {
+    say "$title"
+    for i in "${!keys[@]}"; do say "  ${keys[$i]}) ${labels[$i]}"; done
+  } 1>&2
+  read -rp "$prompt" sel || return 1
+  printf '%s\n' "$sel"
+}
+
+# run_autopilot — preflight, then launch the autonomous orchestrator. Shows the
+# resolved next action, the push state, and any open escalations, and requires an
+# explicit confirm because autopilot runs unattended until it finishes or needs a
+# human.
+run_autopilot() {
+  hr
+  say "Autopilot runs orchestrate.sh until the project is done or it needs you."
+  cmd_next || true
+  if [ "$SETTING_NO_PUSH" = "1" ]; then
+    say "  push: OFF (commits stay local)"
+  else
+    say "  push: ON — commits will be pushed to the remote"
+  fi
+  if [ -f ESCALATIONS.md ] && sed -n '/^## Open/,/^## Resolved/p' ESCALATIONS.md | grep -qE '^### ESC-'; then
+    say "  ** open escalations present — resolve them first (see ESCALATIONS.md) **"
+  fi
+  local ans
+  read -rp "Start autopilot? [y/N]: " ans || ans=""
+  case "$ans" in
+    y|Y|yes|Yes) "$ORCH_DIR/orchestrate.sh" || say "(orchestrator halted — read ESCALATIONS.md)" ;;
+    *)           say "Autopilot cancelled." ;;
+  esac
+}
+
+# open_claude_session — launch claude, optionally primed with the slash command
+# that fits the project's stage (/intake before PROJECT.md exists, else
+# /next-slice). A plain session is one keystroke away.
+open_claude_session() {
+  if ! command -v claude >/dev/null 2>&1; then
+    say "claude not on PATH (see check-cli-tools.sh)."
+    return 0
+  fi
+  local cmd
+  if [ -f PROJECT.md ]; then cmd="/next-slice"; else cmd="/intake"; fi
+  local ans
+  read -rp "Launch claude primed with '$cmd'? [Y/n] (n = plain session): " ans || ans=""
+  case "$ans" in
+    n|N|no|No) claude || true ;;
+    *)         claude "$cmd" || true ;;
+  esac
 }
 
 new_project() {
@@ -371,31 +467,33 @@ new_project() {
 }
 
 menu_project() {
+  load_settings
   apply_settings
+  local choice push_state
   while true; do
     cmd_status
-    local push_state
     if [ "$SETTING_NO_PUSH" = "1" ]; then push_state="OFF (local only)"; else push_state="ON"; fi
-    say "Build menu  [push: $push_state]"
-    say "  1) Refresh status"
-    say "  2) Run next step"
-    say "  3) Autopilot (orchestrate.sh, until it needs you)"
-    say "  4) Validate project"
-    say "  5) View open escalations"
-    say "  6) Settings (push / Codex sandbox)"
-    say "  7) Configure roles (tool + name per role)"
-    say "  8) Open a Claude session"
-    say "  0) Quit"
-    read -rp "> " choice || return 0
+    choice=$(_select "Build menu  [push: $push_state]" "> " \
+      1 "Refresh status" \
+      2 "Run next step" \
+      3 "Autopilot (orchestrate.sh, until it needs you)" \
+      4 "Validate project" \
+      5 "Check factory drift (refresh-project.sh, read-only)" \
+      6 "View open escalations" \
+      7 "Settings (push / Codex sandbox)" \
+      8 "Configure roles (tool + name per role)" \
+      9 "Open a Claude session" \
+      0 "Quit") || return 0
     case "$choice" in
       1) : ;;
       2) run_next || say "(step exited non-zero — see the log above)" ;;
-      3) "$ORCH_DIR/orchestrate.sh" || say "(orchestrator halted — read ESCALATIONS.md)" ;;
+      3) run_autopilot ;;
       4) "$SCRIPT_DIR/validate-project.sh" . || true ;;
-      5) if [ -f ESCALATIONS.md ]; then sed -n '/^## Open/,/^## Resolved/p' ESCALATIONS.md; else say "no ESCALATIONS.md"; fi ;;
-      6) menu_settings ;;
-      7) configure_roles . ;;
-      8) if command -v claude >/dev/null 2>&1; then claude || true; else say "claude not on PATH (see check-cli-tools.sh)"; fi ;;
+      5) "$SCRIPT_DIR/refresh-project.sh" . || true ;;
+      6) if [ -f ESCALATIONS.md ]; then sed -n '/^## Open/,/^## Resolved/p' ESCALATIONS.md; else say "no ESCALATIONS.md"; fi ;;
+      7) menu_settings ;;
+      8) configure_roles . ;;
+      9) open_claude_session ;;
       0) return 0 ;;
       *) say "?" ;;
     esac
@@ -406,22 +504,22 @@ menu_factory() {
   # Report which agent CLIs were found once, on entry (ADR-0013).
   say ""; hr; say "AI App Factory"; say "  $FACTORY_ROOT"; hr
   detect_tools_report
+  local choice defp p
   while true; do
     say ""
-    hr; say "AI App Factory"; hr
-    say "  1) Factory status"
-    say "  2) Detect agent CLIs (claude / gemini / cursor / codex)"
-    say "  3) Check CLI tools (install help)"
-    say "  4) New project (scaffold + configure roles)"
-    say "  5) Open a project (build menu)"
-    say "  0) Quit"
-    read -rp "> " choice || exit 0
+    choice=$(_select "AI App Factory" "> " \
+      1 "Factory status" \
+      2 "Detect agent CLIs (claude / gemini / cursor / codex)" \
+      3 "Check CLI tools (install help)" \
+      4 "New project (scaffold + configure roles)" \
+      5 "Open a project (build menu)" \
+      0 "Quit") || exit 0
     case "$choice" in
       1) "$SCRIPT_DIR/factory-status.sh" || true ;;
       2) hr; detect_tools_report; hr ;;
       3) "$SCRIPT_DIR/check-cli-tools.sh" || true ;;
       4) new_project ;;
-      5) local defp; defp=$(default_project_path)
+      5) defp=$(default_project_path)
          read -rp "Project path [${defp}]: " p || true
          p="${p:-$defp}"
          if [ -n "${p:-}" ] && [ -d "$p" ]; then ( cd "$p" && menu_project ); else say "not a directory: ${p:-}"; fi ;;
@@ -431,12 +529,20 @@ menu_factory() {
   done
 }
 
+# When sourced (e.g. by scripts/test/*.test.sh) stop here: only the function
+# definitions above are wanted, not the interactive menu / CLI below.
+[ "${BASH_SOURCE[0]}" = "$0" ] || return 0
+
 # --- argument parsing -----------------------------------------------------
 
 case "${1:-}" in
   -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-  --next)    cmd_next || exit 1; exit 0 ;;
-  --status)  cmd_status; exit 0 ;;
+  --next)
+    if [ -n "${2:-}" ]; then [ -d "$2" ] || { say "not a directory: $2"; exit 1; }; cd "$2"; fi
+    cmd_next || exit 1; exit 0 ;;
+  --status)
+    if [ -n "${2:-}" ]; then [ -d "$2" ] || { say "not a directory: $2"; exit 1; }; cd "$2"; fi
+    cmd_status; exit 0 ;;
   "")        ;;
   *)         say "unknown argument: $1 (try --help)"; exit 1 ;;
 esac

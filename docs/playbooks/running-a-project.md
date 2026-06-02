@@ -49,6 +49,24 @@ chmod +x "$FACTORY_PATH"/scripts/*.sh "$FACTORY_PATH"/scripts/orchestrator/*.sh
 
 The repo tracks the executable bit in git, so future clones inherit it; this is for the first clone on a new machine.
 
+### 1.4 Optional: drive everything from the launcher (`factory.sh`)
+
+`factory.sh` is a thin, context-aware menu that wraps the commands in this playbook (`docs/adr/0012-interactive-factory-tui.md`). Run it with no arguments and it detects where it is:
+
+- **In the factory root** — a kickoff menu: factory health, agent-CLI detection, "new project" (with the role wizard), and opening an existing project's build panel.
+- **In a scaffolded project** — a build menu: status and the resolved next action, run the next step, autopilot (with a preflight + confirm), validate, a read-only factory-drift check (`refresh-project.sh`), open escalations, settings, the role config, and a Claude session primed with the slash command that fits the stage (`/intake` or `/next-slice`).
+
+It runs the same audited scripts documented below — nothing happens in the launcher that you cannot also do by hand. The plain numbered menus need no extra runtime; if `fzf` or `whiptail` is installed it uses that for a nicer picker and otherwise degrades to the numbered prompt. Build-menu settings (push, the Codex sandbox flag) persist per project in a gitignored `.factory-settings`.
+
+It also answers "what do I run next?" non-interactively — handy in scripts and over SSH:
+
+```bash
+factory.sh --next            # next adapter command for the project in $PWD
+factory.sh --status          # next action + slice count + open escalations
+factory.sh --next  <dir>     # ...for a project elsewhere, without cd-ing in
+factory.sh --status <dir>
+```
+
 ---
 
 ## 2. Scaffold a new project
@@ -267,6 +285,9 @@ Then close out the release:
 
 | Step | Command |
 |---|---|
+| Launcher (interactive menu) | `factory.sh` |
+| Launcher: next action | `factory.sh --next [dir]` |
+| Launcher: project status | `factory.sh --status [dir]` |
 | Setup (once) | `export FACTORY_PATH=...; export PATH=...` |
 | Tool check | `check-cli-tools.sh` |
 | Scaffold | `scaffold-new-project.sh --name ... --blueprint ... --goal "..." --users "..."` |

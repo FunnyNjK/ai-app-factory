@@ -37,3 +37,14 @@ jobs:
 
       - name: Validate factory artifacts
         run: node scripts/validate-factory.mjs
+
+  script-tests:
+    name: Script Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run bash test suite
+        run: bash scripts/test/run.sh

@@ -21,7 +21,7 @@ This repository contains a starter operating system for an AI-assisted app deliv
 
 | File | Purpose |
 |---|---|
-| `.github/workflows/ci.yml` | Starter CI workflow that validates markdown quality and required factory files. |
+| `.github/workflows/ci.yml` | Starter CI workflow: markdown quality, required factory files, and the bash test suites (`scripts/test/`). |
 | `.github/pull_request_template.md` | PR checklist template including the six-party Gate D sign-off. |
 | `scripts/validate-factory.mjs` | Dependency-free validation script for required artifacts, manifest references, backtick path resolution, placeholder safety, and env-var cross-consistency. |
 | `scripts/scaffold-new-project.sh` | Scaffolds a new factory project — copies the skeleton + starter templates, replaces placeholders, optionally git-inits. Backs the new-project slash command and the `spawn-new-project` skill. |
@@ -29,7 +29,19 @@ This repository contains a starter operating system for an AI-assisted app deliv
 | `scripts/validate-project.sh` | Lints a spawned project — required files, unfilled placeholders, TASKS.md and ESCALATIONS.md structure, sensitive-path scan. |
 | `scripts/refresh-project.sh` | Read-only drift detector — reports where a scaffolded project has fallen behind current factory conventions (TASKS.md legends, slash commands, the Gate D sign-off artifact, the version stamp). |
 | `scripts/factory-status.sh` | Quick factory health check — git state, CLI tool presence, ADR/blueprint/standard counts, validator pass/fail. Run before starting a new project. |
-| `scripts/factory.sh` | Context-aware interactive launcher (TUI) wrapping the existing scripts: in the factory, status / scaffold / open-a-project; in a project, status / next step / autopilot / settings. Has non-interactive next and status modes. See ADR-0012. |
+| `scripts/factory.sh` | Context-aware interactive launcher (TUI) wrapping the existing scripts: in the factory, status / scaffold / open-a-project; in a project, status / next step / autopilot / drift-check / settings. Settings persist per project; menus use `fzf`/`whiptail` when present. Has non-interactive `--next [dir]` / `--status [dir]` modes. See ADR-0012. |
+
+## Tests
+
+Dependency-free bash test suites — no framework, nothing beyond bash and the python3 the orchestrator already requires. Run them locally with the runner `scripts/test/run.sh`; CI runs them in the `Script Tests` job.
+
+| File | Purpose |
+|---|---|
+| `scripts/test/run.sh` | Test runner — executes every `*.test.sh` in the directory, each in its own process, and reports totals. |
+| `scripts/test/lib-assert.sh` | Tiny assertion helpers (`assert_eq`, `assert_contains`, `assert_code`, `assert_summary`) sourced by every suite. |
+| `scripts/test/factory.test.sh` | Tests `scripts/factory.sh`: the non-interactive `--help`/`--next`/`--status` surface (incl. a path argument), the shared `factory_adapter_for` dispatch map, and role-config reads. |
+| `scripts/test/menu.test.sh` | Tests the launcher's `_select` menu helper (dependency-free fallback: chosen key to stdout, UI to stderr). |
+| `scripts/test/settings.test.sh` | Tests the launcher's per-project settings persistence (`load_settings` / `save_settings`). |
 
 ## Orchestrator (Stage 2 of the gating model)
 

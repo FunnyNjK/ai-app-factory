@@ -358,6 +358,31 @@ factory_extract_status_line() {
 }
 
 # ---------------------------------------------------------------------------
+# factory_adapter_for — map an orchestrator (role, kind) pair to its adapter
+# script basename. Echoes the empty string for an unknown combination so the
+# caller decides how to handle it (orchestrate.sh halts; factory.sh reports).
+#
+# This is the single source of truth for the dispatch map. Both
+# scripts/orchestrator/orchestrate.sh and scripts/factory.sh call it, so the
+# two cannot drift — the failure ADR-0012's follow-up called out (a launcher
+# that confidently points at the wrong adapter after a refactor).
+#
+# Usage: factory_adapter_for <role> <kind>   # echoes "<adapter>.sh" or ""
+# ---------------------------------------------------------------------------
+factory_adapter_for() {
+  case "$1-$2" in
+    cursor-slice)                 echo "cursor-slice.sh" ;;
+    codex-slice)                  echo "codex-slice-review.sh" ;;
+    codex-slice-verify)           echo "codex-slice-verify.sh" ;;
+    claude-phase-review)          echo "claude-phase-review.sh" ;;
+    security-phase-security)      echo "security-phase-review.sh" ;;
+    codereview-phase-code-review) echo "codereview-phase-review.sh" ;;
+    orchestrator-gate-d-signoff)  echo "gate-d-signoff.sh" ;;
+    *)                            echo "" ;;
+  esac
+}
+
+# ---------------------------------------------------------------------------
 # factory_next_action — read TASKS.md and report the next actionable item.
 # Output format (one line, space-separated):
 #   <role> <kind> <id>

@@ -156,34 +156,15 @@ while true; do
     fi
   fi
 
-  # Dispatch.
-  case "$ROLE-$KIND" in
-    cursor-slice)
-      ADAPTER="$SCRIPT_DIR/cursor-slice.sh"
-      ;;
-    codex-slice)
-      ADAPTER="$SCRIPT_DIR/codex-slice-review.sh"
-      ;;
-    codex-slice-verify)
-      ADAPTER="$SCRIPT_DIR/codex-slice-verify.sh"
-      ;;
-    claude-phase-review)
-      ADAPTER="$SCRIPT_DIR/claude-phase-review.sh"
-      ;;
-    security-phase-security)
-      ADAPTER="$SCRIPT_DIR/security-phase-review.sh"
-      ;;
-    codereview-phase-code-review)
-      ADAPTER="$SCRIPT_DIR/codereview-phase-review.sh"
-      ;;
-    orchestrator-gate-d-signoff)
-      ADAPTER="$SCRIPT_DIR/gate-d-signoff.sh"
-      ;;
-    *)
-      err "halt: unknown role/kind combination: $ROLE / $KIND"
-      exit 1
-      ;;
-  esac
+  # Dispatch — the (role, kind) -> adapter map lives in lib.sh
+  # (factory_adapter_for), shared with scripts/factory.sh so the two cannot
+  # drift (ADR-0012 follow-up).
+  ADAPTER=$(factory_adapter_for "$ROLE" "$KIND")
+  if [ -z "$ADAPTER" ]; then
+    err "halt: unknown role/kind combination: $ROLE / $KIND"
+    exit 1
+  fi
+  ADAPTER="$SCRIPT_DIR/$ADAPTER"
 
   log "Dispatch: $ADAPTER $ID"
   set +e

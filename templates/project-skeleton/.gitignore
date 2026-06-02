@@ -28,6 +28,9 @@ test-results/
 # Factory orchestrator logs (per-run, ephemeral)
 .factory-logs/
 
+# Factory launcher per-project settings (operator choices: push, Codex sandbox)
+.factory-settings
+
 # Editor and OS metadata
 .vscode/
 .idea/

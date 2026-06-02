@@ -79,10 +79,10 @@ A non-interactive path (`factory.sh --next` / `--status`) prints the resolved ne
 
 ## Follow-up
 
-- Implement `factory.sh` under `scripts/`; reuse `factory_next_action` from `scripts/orchestrator/lib.sh` and share the role-to-adapter map with `orchestrate.sh` to avoid drift.
-- Implement the non-interactive `--next` / `--status` path first; add Tier-1 tests for it.
-- Document the launcher in `docs/playbooks/running-a-project.md`; register it in `MANIFEST.md` and `scripts/validate-factory.mjs` `requiredFiles`.
-- Promote this ADR to Accepted after a first run on the Ubuntu host.
+- [x] Implemented `factory.sh` under `scripts/`; it reuses `factory_next_action` from `scripts/orchestrator/lib.sh`, and the role-to-adapter map now lives in one place — `factory_adapter_for` in `lib.sh`, shared with `orchestrate.sh` so the two cannot drift.
+- [x] Non-interactive `--next` / `--status` implemented (now also accepting an optional project-path argument), covered by a dependency-free bash test suite under `scripts/test/` that CI runs in a `Script Tests` job.
+- [x] Documented the launcher in `docs/playbooks/running-a-project.md`; registered in `MANIFEST.md` and `scripts/validate-factory.mjs` `requiredFiles`.
+- [ ] Promote this ADR to Accepted after a first interactive run on the Ubuntu host (where the `fzf`/`whiptail` pickers and the full menu paths can be exercised live).
 
 ## References
 
