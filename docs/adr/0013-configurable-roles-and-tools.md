@@ -77,7 +77,7 @@ VS Code is intentionally **not** in the registry: its `code` CLI opens an editor
 
 ## Follow-Up
 
-- Wire `tool_invoke` into the three existing adapters and the Gate D ceremony so role→tool is honored everywhere (not just the two new gates).
-- Teach `scripts/validate-project.sh` the new phase-gate entries and `.factory-roles.json`.
-- Teach `scripts/refresh-project.sh` to detect a missing `.factory-roles.json` on older projects.
-- Update `OPERATING_MODEL.md`, `CLAUDE.md`, `AGENTS.md`, and the blueprints to describe five roles and six-party Gate D.
+- [x] Wire `tool_invoke` into the three existing adapters and the Gate D ceremony so role→tool is honored everywhere (not just the two new gates).
+- [x] Teach `scripts/validate-project.sh` the new phase-gate entries and `.factory-roles.json` — the lifecycle and planning-completeness checks cover the security/code-review gates, and check [8] validates the role config; covered by `scripts/test/project-scripts.test.sh`.
+- [x] Teach `scripts/refresh-project.sh` to detect a missing `.factory-roles.json` (and missing per-phase gate entries in `TASKS.md`) on older projects.
+- [x] Update `OPERATING_MODEL.md`, `CLAUDE.md`, `AGENTS.md`, and the blueprints to describe five roles and six-party Gate D.

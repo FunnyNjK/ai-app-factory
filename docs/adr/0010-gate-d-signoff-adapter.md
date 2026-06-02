@@ -61,8 +61,8 @@ A new `factory_signoff_state` helper classifies `SIGNOFF.md` as `pristine`, `age
 
 ## Follow-up
 
-- `scripts/validate-project.sh` gains a check that `SIGNOFF.md` is filled once all phase reviews are approved, so the gap is caught structurally rather than by eye.
-- Revisit whether the product-owner escalation should also carry an explicit re-review date when risks are accepted.
+- [x] `scripts/validate-project.sh` gains a check that `SIGNOFF.md` is filled once all phase reviews are approved, so the gap is caught structurally rather than by eye (lifecycle-consistency check [6]).
+- [ ] Revisit whether the product-owner escalation should also carry an explicit re-review date when risks are accepted.
 
 ## References
 

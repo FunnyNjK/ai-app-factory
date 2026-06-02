@@ -83,6 +83,7 @@ const requiredFiles = [
   "scripts/test/factory.test.sh",
   "scripts/test/lib-assert.sh",
   "scripts/test/menu.test.sh",
+  "scripts/test/project-scripts.test.sh",
   "scripts/test/run.sh",
   "scripts/test/settings.test.sh",
   "scripts/validate-factory.mjs",

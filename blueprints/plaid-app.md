@@ -6,6 +6,12 @@ Create an application that uses Plaid Link to connect financial accounts and sec
 
 ---
 
+## Delivery model
+
+Like every factory project, this blueprint is delivered by the five-role agent team — Architect, Developer, Tester, Security, and Code Review — mapped to tools in the project's `.factory-roles.json`, with per-phase security and code-review gates and a six-party Gate D sign-off (the five roles plus the product owner). See `OPERATING_MODEL.md` and `docs/adr/0013-configurable-roles-and-tools.md`.
+
+---
+
 ## Typical features
 
 - Plaid Link frontend integration
@@ -78,6 +84,8 @@ sequenceDiagram
 ---
 
 ## Suggested database entities
+
+> **Database default:** PostgreSQL (Flexible Server), then Azure SQL, then Cosmos DB. See `docs/adr/0007-default-database-postgres-then-sql-then-cosmos.md` for the decision and trade-offs.
 
 ### PlaidItem
 

@@ -8,6 +8,12 @@ Use this blueprint when the product has users, accounts, dashboards, CRUD workfl
 
 ---
 
+## Delivery model
+
+Like every factory project, this blueprint is delivered by the five-role agent team — Architect, Developer, Tester, Security, and Code Review — mapped to tools in the project's `.factory-roles.json`, with per-phase security and code-review gates and a six-party Gate D sign-off (the five roles plus the product owner). See `OPERATING_MODEL.md` and `docs/adr/0013-configurable-roles-and-tools.md`.
+
+---
+
 ## Typical features
 
 - Authentication
@@ -45,7 +51,7 @@ flowchart TD
 |---|---|
 | Frontend | Next.js, React/Vite, Remix, or SvelteKit |
 | Backend | Node.js API, .NET API, or Azure Functions |
-| Database | Azure SQL, PostgreSQL, Cosmos DB, or Table Storage |
+| Database | PostgreSQL (default), Azure SQL, Cosmos DB, or Table Storage |
 | Auth | Microsoft Entra ID, Auth0, Clerk, or app-specific auth |
 | Secrets | Azure Key Vault |
 | Email | Postmark |

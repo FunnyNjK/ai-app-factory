@@ -65,9 +65,30 @@ fi
 
 # --- Marker: SIGNOFF.md (Gate D) -------------------------------------------
 if [ -f "$PROJECT_PATH/SIGNOFF.md" ]; then
-  ok "SIGNOFF.md present (Gate D four-party sign-off)"
+  ok "SIGNOFF.md present (Gate D six-party sign-off)"
 else
   drift "SIGNOFF.md missing — copy templates/SIGNOFF.md (the Gate D sign-off artifact)."
+fi
+
+# --- Marker: .factory-roles.json (ADR-0013 five-role team) -----------------
+if [ -f "$PROJECT_PATH/.factory-roles.json" ]; then
+  ok ".factory-roles.json present (role→tool mapping)"
+else
+  drift ".factory-roles.json missing — copy templates/factory-roles.default.json to .factory-roles.json and customize the role→tool mapping (docs/adr/0013-configurable-roles-and-tools.md)."
+fi
+
+# --- Marker: per-phase security and code-review gates (ADR-0013) -----------
+# A project scaffolded before ADR-0013 has '### Phase N review' entries but no
+# '### Phase N security' / '### Phase N code-review' gates in TASKS.md.
+if [ -f "$PROJECT_PATH/TASKS.md" ]; then
+  if grep -qiE '^### Phase [0-9]+ review' "$PROJECT_PATH/TASKS.md"; then
+    if grep -qiE '^### Phase [0-9]+ security' "$PROJECT_PATH/TASKS.md" \
+      && grep -qiE '^### Phase [0-9]+ code-review' "$PROJECT_PATH/TASKS.md"; then
+      ok "TASKS.md has the per-phase security and code-review gates"
+    else
+      drift "TASKS.md is missing the per-phase security and/or code-review gate entries — add a '### Phase N security' and '### Phase N code-review' section per phase (see templates/project-skeleton/TASKS.md and docs/adr/0013-configurable-roles-and-tools.md)."
+    fi
+  fi
 fi
 
 # --- Marker: the current .claude/commands set -----------------------------

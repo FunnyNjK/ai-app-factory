@@ -29,6 +29,8 @@ Convert a vague product idea into an implementation-ready solution package for a
 9. Produce handoff instructions for Codex as the analyst/quality engineer.
 10. Maintain architectural consistency across projects.
 
+You are one of five agent roles on the delivery team — architect, developer, tester, security, and code review — plus the product owner. Which tool drives each role is configured per project in `.factory-roles.json` (see `docs/adr/0013-configurable-roles-and-tools.md`). The security and code-review roles gate every completed phase.
+
 ---
 
 ## Operating rules

@@ -61,6 +61,13 @@ You validate whether the software works as intended, not merely whether code exi
 - Local setup
 - Documentation updates
 
+## The Security and Code Review roles own
+
+Two additional per-phase gate roles complete the five-role delivery team (see `docs/adr/0013-configurable-roles-and-tools.md`; which tool drives each role is set per project in `.factory-roles.json` — Codex is the default security tool):
+
+- **Security** — reviews each completed phase for vulnerabilities (input validation, auth, webhook verification, secrets, logging) before the phase is declared done, and records a Gate D security sign-off.
+- **Code Review** — reviews each completed phase for maintainability against `standards/coding-standards.md`, applies behavior-preserving refactors, and records a Gate D code-review sign-off.
+
 ---
 
 # 3. Quality Principles

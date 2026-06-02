@@ -16,12 +16,14 @@
 - Postmark email workflows
 - CI/CD, testing, monitoring, and release checklists
 
-The goal is not just to generate code. The goal is to create a disciplined process where AI agents act like a small software delivery team:
+The goal is not just to generate code. The goal is to create a disciplined process where AI agents act like a small software delivery team. The team is five agent roles plus the product owner; which CLI tool drives each role is a per-project decision recorded in `.factory-roles.json` (see `docs/adr/0013-configurable-roles-and-tools.md`). The default mapping:
 
-1. **Claude** acts as the Software Architect / Solution Designer.
-2. **Cursor AI** acts as the Software Developer.
-3. **Codex** acts as the Software Analyst / Quality Engineer.
-4. **You** act as the Product Owner / Final Decision Maker.
+1. **Architect** (default: Claude) — Software Architect / Solution Designer.
+2. **Developer** (default: Cursor) — Software Developer.
+3. **Quality Engineer** (default: Codex) — Software Analyst / Quality Engineer.
+4. **Security** (default: Codex) — per-phase security reviewer.
+5. **Code Review** (default: Claude) — per-phase maintainability reviewer.
+6. **You** — Product Owner / Final Decision Maker.
 
 ---
 
@@ -73,6 +75,8 @@ Every project should produce reusable artifacts: architecture notes, diagrams, A
 ---
 
 ## 2. Agent Team Structure
+
+The five roles below are described by their default tools. Any of the four supported CLIs (Claude, Cursor, Codex, Gemini) can fill any role, per project, via `.factory-roles.json` (see `docs/adr/0013-configurable-roles-and-tools.md`).
 
 ### 2.1 Claude — Software Architect / Solution Designer
 
@@ -174,6 +178,46 @@ Codex owns requirements analysis, test strategy, quality risk, and release confi
 
 ---
 
+### 2.4 Security — Per-Phase Security Reviewer
+
+The security role (default tool: Codex) owns the per-phase security gate introduced by `docs/adr/0013-configurable-roles-and-tools.md`.
+
+#### Responsibilities
+
+- Review each completed phase for vulnerabilities before the phase is declared done.
+- Verify input validation, authentication, authorization, and webhook signature verification at trust boundaries.
+- Verify no secrets are committed and logs do not leak sensitive data.
+- Harden in place where the fix is mechanical; escalate judgment calls to the product owner.
+- Record a Gate D security sign-off.
+
+#### Security should produce
+
+- Per-phase security gate notes in `TASKS.md`
+- Security sub-tasks for findings that block the phase
+- A Gate D sign-off with a "Pass" or "Pass with documented risks" decision
+
+---
+
+### 2.5 Code Review — Per-Phase Maintainability Reviewer
+
+The code-review role (default tool: Claude) owns the per-phase code-review gate introduced by `docs/adr/0013-configurable-roles-and-tools.md`.
+
+#### Responsibilities
+
+- Review each completed phase for readability, duplication, naming, and structure.
+- Apply behavior-preserving refactors where safe; file sub-tasks for larger ones.
+- Confirm the codebase meets `standards/coding-standards.md`.
+- Track accepted maintainability debt explicitly rather than letting it accumulate silently.
+- Record a Gate D code-review sign-off.
+
+#### Code Review should produce
+
+- Per-phase code-review gate notes in `TASKS.md`
+- Refactoring sub-tasks for findings that block the phase
+- A Gate D sign-off confirming standards compliance and tracked maintainability debt
+
+---
+
 ## 3. Standard Project Workflow
 
 ### Phase 0 — Project request
@@ -260,7 +304,7 @@ Output per slice:
 
 ### Phase 5 — QE verification
 
-Codex validates the build against requirements. Codex performs per-slice review during Phase 4 (filing sub-tasks when slices fail acceptance criteria); at each phase boundary, when every slice in a phase reaches `approved`, Claude performs a per-phase review (see `docs/adr/0008-per-slice-and-per-phase-gating.md`). Any iteration cap hit or judgment call routes to `ESCALATIONS.md` for the product owner.
+Codex validates the build against requirements. Codex performs per-slice review during Phase 4 (filing sub-tasks when slices fail acceptance criteria); at each phase boundary, when every slice in a phase reaches `approved`, Claude performs a per-phase review (see `docs/adr/0008-per-slice-and-per-phase-gating.md`). After the architect's phase review is approved, the security gate and then the code-review gate run; all three must be `approved` before the next phase begins (see `docs/adr/0013-configurable-roles-and-tools.md`). Any iteration cap hit or judgment call routes to `ESCALATIONS.md` for the product owner.
 
 Output:
 

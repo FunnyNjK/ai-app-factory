@@ -6,6 +6,12 @@ Create serverless workflows for APIs, scheduled jobs, queue processors, webhook 
 
 ---
 
+## Delivery model
+
+Like every factory project, this blueprint is delivered by the five-role agent team — Architect, Developer, Tester, Security, and Code Review — mapped to tools in the project's `.factory-roles.json`, with per-phase security and code-review gates and a six-party Gate D sign-off (the five roles plus the product owner). See `OPERATING_MODEL.md` and `docs/adr/0013-configurable-roles-and-tools.md`.
+
+---
+
 ## Typical uses
 
 - Contact form submission

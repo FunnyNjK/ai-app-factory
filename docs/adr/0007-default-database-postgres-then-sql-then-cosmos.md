@@ -62,10 +62,10 @@ A project that picks anything other than PostgreSQL records the reason in its `A
 
 ## Follow-up
 
-- Add a `postgres.bicep` (under `templates/infra/modules/`) module wired into `templates/infra/main.bicep` behind an `enablePostgres` parameter. Defer until the first real project that needs it; the module should not be speculative.
-- Update `blueprints/full-stack-web-app.md`, `blueprints/stripe-app.md`, and `blueprints/plaid-app.md` to reference this ADR and to drop the "Azure SQL or Cosmos DB" hedge.
-- Pick a default migration tool and record it in `standards/coding-standards.md` after a project actually runs the migration path. Likely Drizzle Kit given the TypeScript-first stack.
-- Add an Azure SQL Bicep module when a project surfaces that needs it. Same rule: ship modules driven by real demand, not anticipation.
+- [ ] Add a `postgres.bicep` (under `templates/infra/modules/`) module wired into `templates/infra/main.bicep` behind an `enablePostgres` parameter. Defer until the first real project that needs it; the module should not be speculative.
+- [x] Update `blueprints/full-stack-web-app.md`, `blueprints/stripe-app.md`, and `blueprints/plaid-app.md` to reference this ADR and to drop the "Azure SQL or Cosmos DB" hedge.
+- [ ] Pick a default migration tool and record it in `standards/coding-standards.md` after a project actually runs the migration path. Likely Drizzle Kit given the TypeScript-first stack.
+- [ ] Add an Azure SQL Bicep module when a project surfaces that needs it. Same rule: ship modules driven by real demand, not anticipation.
 
 ## References
 

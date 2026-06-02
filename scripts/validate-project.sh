@@ -13,6 +13,13 @@
 #   3. TASKS.md has at least one Phase section and one slice with a Status line.
 #   4. ESCALATIONS.md is structurally intact (has the expected sections).
 #   5. No obvious secrets in tracked files (.env, *.pem, id_rsa, etc.).
+#   6. Lifecycle consistency: SIGNOFF.md filled once every phase gate (review,
+#      security, code-review) is approved; no stale open escalations; phase
+#      review Status matches its Notes.
+#   7. Planning completeness: every slice, phase review, and phase gate carries
+#      its required fields; every project ADR has its required sections.
+#   8. Role configuration (.factory-roles.json, ADR-0013): valid JSON, known
+#      role keys, supported tools, non-empty display names.
 #
 # Usage:
 #   scripts/validate-project.sh [project-path]
@@ -485,6 +492,92 @@ set -e
 cat "$COMPLETENESS_TMP"
 rm -f "$COMPLETENESS_TMP"
 ERRORS=$((ERRORS + completeness_rc))
+
+# --- 8. Role configuration (.factory-roles.json) ---------------------------
+#
+# ADR-0013: every scaffolded project carries a .factory-roles.json mapping the
+# five role keys to a tool and a display name. The orchestrator falls back to
+# built-in defaults when the file is absent (older projects), so absence is a
+# note, not a failure — refresh-project.sh reports it as drift. A present but
+# malformed file IS a failure: the orchestrator would silently fall back to
+# defaults and ignore what the operator thought they configured.
+
+printf '\n[8] Role configuration (.factory-roles.json)\n'
+
+if [ ! -f .factory-roles.json ]; then
+  note "no .factory-roles.json - the orchestrator uses built-in default roles (run scripts/refresh-project.sh to adopt ADR-0013)"
+else
+  set +e
+  ROLES_TMP=$(mktemp "${TMPDIR:-/tmp}/factory-roles.XXXXXX")
+  python3 - >"$ROLES_TMP" <<'PYEOF'
+import json
+import sys
+
+fails = 0
+
+
+def emit_fail(msg):
+    global fails
+    fails += 1
+    print(f"FAIL  {msg}")
+
+
+def emit_pass(msg):
+    print(f"pass  {msg}")
+
+
+# Keep in sync with scripts/orchestrator/lib.sh (factory_role_default_tool,
+# factory_tool_is_supported) and templates/factory-roles.default.json.
+ROLE_KEYS = {"architect", "developer", "tester", "security", "code_review"}
+SUPPORTED_TOOLS = {"claude", "cursor", "codex", "gemini"}
+
+try:
+    with open(".factory-roles.json", encoding="utf-8") as f:
+        data = json.load(f)
+except (json.JSONDecodeError, OSError) as e:
+    emit_fail(f".factory-roles.json is not valid JSON ({e})")
+    sys.exit(fails)
+
+roles = data.get("roles")
+if not isinstance(roles, dict):
+    emit_fail('.factory-roles.json has no "roles" object')
+    sys.exit(fails)
+
+unknown = sorted(set(roles) - ROLE_KEYS)
+for key in unknown:
+    emit_fail(f'.factory-roles.json has unknown role key "{key}" (role keys are structural: ' + ", ".join(sorted(ROLE_KEYS)) + ")")
+
+missing = sorted(ROLE_KEYS - set(roles))
+if missing:
+    print("note  .factory-roles.json does not map: " + ", ".join(missing) + " (the orchestrator uses built-in defaults for them)")
+
+bad = 0
+for key in sorted(set(roles) & ROLE_KEYS):
+    entry = roles[key]
+    if not isinstance(entry, dict):
+        emit_fail(f'role "{key}" is not an object')
+        bad += 1
+        continue
+    tool = entry.get("tool")
+    name = entry.get("name")
+    if tool not in SUPPORTED_TOOLS:
+        emit_fail(f'role "{key}" has unsupported tool "{tool}" (supported: ' + ", ".join(sorted(SUPPORTED_TOOLS)) + ")")
+        bad += 1
+    if not isinstance(name, str) or not name.strip():
+        emit_fail(f'role "{key}" has no display name')
+        bad += 1
+
+if not unknown and bad == 0:
+    emit_pass(".factory-roles.json maps every configured role to a supported tool")
+
+sys.exit(fails)
+PYEOF
+  roles_rc=$?
+  set -e
+  cat "$ROLES_TMP"
+  rm -f "$ROLES_TMP"
+  ERRORS=$((ERRORS + roles_rc))
+fi
 
 # --- Summary --------------------------------------------------------------
 

@@ -26,8 +26,8 @@ This repository contains a starter operating system for an AI-assisted app deliv
 | `scripts/validate-factory.mjs` | Dependency-free validation script for required artifacts, manifest references, backtick path resolution, placeholder safety, and env-var cross-consistency. |
 | `scripts/scaffold-new-project.sh` | Scaffolds a new factory project — copies the skeleton + starter templates, replaces placeholders, optionally git-inits. Backs the new-project slash command and the `spawn-new-project` skill. |
 | `scripts/check-cli-tools.sh` | Preflight check for the four supported agent CLIs (`claude`, `codex`, `agent`, `gemini`) and the supporting tools. Reports presence, version, install help for any missing tool, and whether auth env vars are set. A missing agent CLI is informational (install only the ones your roles use); a missing supporting tool fails. |
-| `scripts/validate-project.sh` | Lints a spawned project — required files, unfilled placeholders, TASKS.md and ESCALATIONS.md structure, sensitive-path scan. |
-| `scripts/refresh-project.sh` | Read-only drift detector — reports where a scaffolded project has fallen behind current factory conventions (TASKS.md legends, slash commands, the Gate D sign-off artifact, the version stamp). |
+| `scripts/validate-project.sh` | Lints a spawned project — required files, unfilled placeholders, TASKS.md and ESCALATIONS.md structure, sensitive-path scan, lifecycle consistency, planning completeness, and the .factory-roles.json role configuration (ADR-0013). |
+| `scripts/refresh-project.sh` | Read-only drift detector — reports where a scaffolded project has fallen behind current factory conventions (TASKS.md legends and phase gates, slash commands, the Gate D sign-off artifact, the .factory-roles.json role config, the version stamp). |
 | `scripts/factory-status.sh` | Quick factory health check — git state, CLI tool presence, ADR/blueprint/standard counts, validator pass/fail. Run before starting a new project. |
 | `scripts/factory.sh` | Context-aware interactive launcher (TUI) wrapping the existing scripts: in the factory, status / scaffold / open-a-project; in a project, status / next step / autopilot / drift-check / settings. Settings persist per project; menus use `fzf`/`whiptail` when present. Has non-interactive `--next [dir]` / `--status [dir]` modes. See ADR-0012. |
 
@@ -42,6 +42,7 @@ Dependency-free bash test suites — no framework, nothing beyond bash and the p
 | `scripts/test/factory.test.sh` | Tests `scripts/factory.sh`: the non-interactive `--help`/`--next`/`--status` surface (incl. a path argument), the shared `factory_adapter_for` dispatch map, and role-config reads. |
 | `scripts/test/menu.test.sh` | Tests the launcher's `_select` menu helper (dependency-free fallback: chosen key to stdout, UI to stderr). |
 | `scripts/test/settings.test.sh` | Tests the launcher's per-project settings persistence (`load_settings` / `save_settings`). |
+| `scripts/test/project-scripts.test.sh` | Tests the per-project scripts: .factory-roles.json validation in `scripts/validate-project.sh` and the ADR-0013 drift markers in `scripts/refresh-project.sh`. |
 
 ## Orchestrator (Stage 2 of the gating model)
 
