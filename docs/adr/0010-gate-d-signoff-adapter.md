@@ -62,7 +62,7 @@ A new `factory_signoff_state` helper classifies `SIGNOFF.md` as `pristine`, `age
 ## Follow-up
 
 - [x] `scripts/validate-project.sh` gains a check that `SIGNOFF.md` is filled once all phase reviews are approved, so the gap is caught structurally rather than by eye (lifecycle-consistency check [6]).
-- [ ] Revisit whether the product-owner escalation should also carry an explicit re-review date when risks are accepted.
+- [x] Revisit whether the product-owner escalation should also carry an explicit re-review date when risks are accepted. **Resolved 2026-06-01 (product owner): yes.** Any product-owner sign-off or escalation resolution that accepts a documented risk must name an explicit re-review date — an acceptance without one is not a valid sign-off. Reflected in `templates/SIGNOFF.md` (the "Accepted risks re-review date" field), `templates/project-skeleton/ESCALATIONS.md` (the "Accept the risk" resolution rule), and `OPERATING_MODEL.md` Gate D; enforced structurally by `scripts/validate-project.sh` lifecycle check [6].
 
 ## References
 

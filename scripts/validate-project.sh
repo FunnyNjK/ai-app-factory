@@ -14,8 +14,9 @@
 #   4. ESCALATIONS.md is structurally intact (has the expected sections).
 #   5. No obvious secrets in tracked files (.env, *.pem, id_rsa, etc.).
 #   6. Lifecycle consistency: SIGNOFF.md filled once every phase gate (review,
-#      security, code-review) is approved; no stale open escalations; phase
-#      review Status matches its Notes.
+#      security, code-review) is approved; accepted risks carry an explicit
+#      re-review date (ADR-0010); no stale open escalations; phase review
+#      Status matches its Notes.
 #   7. Planning completeness: every slice, phase review, and phase gate carries
 #      its required fields; every project ADR has its required sections.
 #   8. Role configuration (.factory-roles.json, ADR-0013): valid JSON, known
@@ -320,6 +321,23 @@ else:
         emit_fail("Gate D sign-off not complete - run gate-d-signoff.sh (" + "; ".join(unfilled) + ")")
     else:
         emit_pass("SIGNOFF.md is fully signed (all phase reviews approved)")
+
+    # ADR-0010: a product-owner sign-off that accepts risks must name an
+    # explicit re-review date - a real date, not "none" and not the template
+    # placeholder. An acceptance without one is not a valid sign-off.
+    po_m = re.search(r"^##\s+Product owner.*$", sign, re.MULTILINE)
+    if po_m:
+        nxt = re.search(r"^##\s", sign[po_m.end():], re.MULTILINE)
+        po_body = sign[po_m.start():po_m.end() + nxt.start()] if nxt else sign[po_m.start():]
+        dec = re.search(r"^\*\*Decision:\*\*\s*(.+)$", po_body, re.MULTILINE)
+        if dec and "accepted risks" in dec.group(1).lower() and "|" not in dec.group(1):
+            rr = re.search(r"^\*\*Accepted risks re-review date:\*\*\s*(.+)$", po_body, re.MULTILINE)
+            if not rr:
+                emit_fail("product owner accepted risks but SIGNOFF.md has no 'Accepted risks re-review date:' line (ADR-0010)")
+            elif "YYYY" in rr.group(1) or not re.search(r"\d{4}-\d{2}-\d{2}", rr.group(1)):
+                emit_fail("product owner accepted risks without an explicit re-review date (ADR-0010): got '" + rr.group(1).strip() + "'")
+            else:
+                emit_pass("accepted risks carry a re-review date (" + rr.group(1).strip() + ")")
 
 # Check 2: no escalation under ## Open references an already-approved item.
 esc = ""

@@ -75,6 +75,124 @@ out=$(bash "$VALIDATE" "$P" 2>&1)
 assert_contains "$out" ".factory-roles.json does not map:" "validate: partial mapping notes the unmapped roles"
 assert_contains "$out" ".factory-roles.json maps every configured role to a supported tool" "validate: partial mapping with valid entries passes"
 
+# --- validate-project.sh check [6]: accepted-risk re-review date (ADR-0010) -
+
+# Helper: a one-phase project where every gate is approved, so the Gate D
+# lifecycle checks (including the ADR-0010 re-review-date rule) actually run.
+make_approved_project() {
+  local dir="$1"
+  mkdir -p "$dir"
+  cat > "$dir/TASKS.md" <<'TASKS'
+# Project Tasks — test
+
+## Phase 1 — Test
+
+### 1.1 test slice
+
+- Status: `approved`
+- Owner: cursor
+- Acceptance criteria: test
+- Iterations: 1/3
+- Notes: -
+
+### Phase 1 review
+
+- Status: `approved`
+- Reviewer: architect
+- Iterations: 1/2
+- Notes: Approved 2026-06-01
+
+### Phase 1 security
+
+- Status: `approved`
+- Reviewer: security
+- Iterations: 1/2
+- Notes: Approved 2026-06-01
+
+### Phase 1 code-review
+
+- Status: `approved`
+- Reviewer: code_review
+- Iterations: 1/2
+- Notes: Approved 2026-06-01
+TASKS
+}
+
+# Filled product-owner sign-off accepting risks WITHOUT a re-review date -> FAIL.
+P="$WORK/risks-no-date"
+make_approved_project "$P"
+cat > "$P/SIGNOFF.md" <<'SIGN'
+## Product owner / technical owner sign-off
+
+**Decision:** Release approved with accepted risks
+
+**Notes:**
+
+Accepting the risk of no rate limiting in v1.
+
+**Signed:** Test Owner (product owner) — 2026-06-01
+SIGN
+out=$(bash "$VALIDATE" "$P" 2>&1)
+assert_contains "$out" "no 'Accepted risks re-review date:' line (ADR-0010)" "validate: accepted risks without a re-review-date line is a failure"
+
+# Same, but the re-review-date line still holds the template placeholder -> FAIL.
+P="$WORK/risks-placeholder-date"
+make_approved_project "$P"
+cat > "$P/SIGNOFF.md" <<'SIGN'
+## Product owner / technical owner sign-off
+
+**Decision:** Release approved with accepted risks
+
+**Notes:**
+
+Accepting the risk of no rate limiting in v1.
+
+**Accepted risks re-review date:** none
+
+**Signed:** Test Owner (product owner) — 2026-06-01
+SIGN
+out=$(bash "$VALIDATE" "$P" 2>&1)
+assert_contains "$out" "without an explicit re-review date (ADR-0010)" "validate: accepted risks with 'none' as the re-review date is a failure"
+
+# Same, with a real re-review date -> pass.
+P="$WORK/risks-with-date"
+make_approved_project "$P"
+cat > "$P/SIGNOFF.md" <<'SIGN'
+## Product owner / technical owner sign-off
+
+**Decision:** Release approved with accepted risks
+
+**Notes:**
+
+Accepting the risk of no rate limiting in v1.
+
+**Accepted risks re-review date:** 2026-09-01
+
+**Signed:** Test Owner (product owner) — 2026-06-01
+SIGN
+out=$(bash "$VALIDATE" "$P" 2>&1)
+assert_contains "$out" "accepted risks carry a re-review date (2026-09-01)" "validate: accepted risks with a real re-review date pass"
+
+# No risks accepted -> the re-review rule does not apply.
+P="$WORK/no-risks"
+make_approved_project "$P"
+cat > "$P/SIGNOFF.md" <<'SIGN'
+## Product owner / technical owner sign-off
+
+**Decision:** Release approved
+
+**Notes:**
+
+No risks accepted.
+
+**Accepted risks re-review date:** none
+
+**Signed:** Test Owner (product owner) — 2026-06-01
+SIGN
+out=$(bash "$VALIDATE" "$P" 2>&1)
+risk_fails=$(printf '%s\n' "$out" | grep -c 'ADR-0010' || true)
+assert_eq "0" "$risk_fails" "validate: plain approval is exempt from the re-review-date rule"
+
 # --- refresh-project.sh: ADR-0013 drift markers -----------------------------
 
 # Full fixture: skeleton + the files the scaffolder adds -> no drift, exit 0.

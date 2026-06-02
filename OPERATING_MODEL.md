@@ -397,7 +397,7 @@ A project is **release-ready** only when each of the six parties below has signe
 3. **Quality Engineer** — confirms test plan executed, critical journeys pass, security and accessibility smoke checks pass, release readiness decision is "Ready" or "Ready with documented risks."
 4. **Security** — confirms the per-phase security gates passed, no secrets in the tree, input validation / authorization / webhook verification hold, decision is "Pass" or "Pass with documented risks."
 5. **Code Review** — confirms the per-phase code-review gates passed, the codebase meets the coding standards, and any accepted maintainability debt is tracked.
-6. **Human team (Product owner / technical owner)** — confirms business intent satisfied, documented risks accepted, release authorized.
+6. **Human team (Product owner / technical owner)** — confirms business intent satisfied, documented risks accepted, release authorized. Every accepted risk names an owner and an explicit re-review date (`docs/adr/0010-gate-d-signoff-adapter.md`); an acceptance without a re-review date is not a valid sign-off.
 
 A blocked sign-off must name a specific blocker. Vague concerns are not blockers. See `docs/adr/0013-configurable-roles-and-tools.md` (which supersedes `docs/adr/0006-three-agent-signoff.md`) for the decision behind this gate.
 

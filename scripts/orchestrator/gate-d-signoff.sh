@@ -167,7 +167,7 @@ if [ "$STATE" = "agents-signed" ] || [ "$STATE" = "complete" ]; then
   factory_log_escalation ESCALATIONS.md "orchestrator" "Gate D sign-off" "judgment-call" \
     "The five agent sign-offs (architect, developer, quality engineer, security, code review) are recorded in SIGNOFF.md. The sixth, the product-owner sign-off, is a human decision the factory cannot make on its own." \
     "Ran the five Gate D sign-off sessions; each wrote its own section of SIGNOFF.md. Session logs are under $LOG_DIR/." \
-    "Review the five agent sign-offs and complete the product-owner section of SIGNOFF.md (Decision, Notes, Signed), then re-run the orchestrator to close the run." \
+    "Review the five agent sign-offs and complete the product-owner section of SIGNOFF.md (Decision, Notes, the accepted-risks re-review date, Signed). If you accept documented risks, the re-review date must be a real date - an acceptance without one is not a valid sign-off (ADR-0010). Then re-run the orchestrator to close the run." \
     >>"$LOG_DIR/escalation.log"
   DETAILS="five agent sign-offs complete; product-owner sign-off required"
 else

@@ -81,6 +81,8 @@ One documented risk: there is no anti-bot beyond the honeypot and IP rate-limit.
 
 **Notes:**
 
-Approving release. Schedule the 3-month re-review on the calendar; if spam exceeds 10 submissions/day post-launch, fast-track Turnstile.
+Approving release. The single accepted risk (no Turnstile in v1) is owned by the product owner; if spam exceeds 10 submissions/day post-launch, fast-track Turnstile ahead of the re-review date.
+
+**Accepted risks re-review date:** 2026-08-25
 
 **Signed:** Tommy (product owner) — 2026-05-25

@@ -22,6 +22,7 @@ Each escalation gets its own subsection. Use the next sequential ID (`ESC-001`, 
 When the product owner reviews:
 
 - **Approve and resume** — add a resolution note and route work back to the relevant agent.
+- **Accept the risk** — when the resolution accepts a documented risk instead of fixing it, the resolution note must name the risk's owner and an explicit re-review date (`re-review: YYYY-MM-DD`). A risk acceptance without a re-review date is not a valid resolution (see the factory's `docs/adr/0010-gate-d-signoff-adapter.md`).
 - **Defer** — note the deferral reason and move to Resolved if the deferral is permanent, otherwise leave open with a `defer-until` date.
 - **Reject the work** — close the slice/phase with a different decision (smaller scope, different approach, cancel).
 

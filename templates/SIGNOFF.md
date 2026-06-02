@@ -121,6 +121,10 @@ Describe in 2–6 sentences. Name any maintainability debt accepted into the rel
 
 **Notes:**
 
-Describe in 2–6 sentences. If risks are accepted, list them and name the re-review date.
+Describe in 2–6 sentences. If risks are accepted, list each risk and its owner here.
+
+**Accepted risks re-review date:** none | YYYY-MM-DD
+
+> A "Release approved with accepted risks" decision without a real re-review date is not a valid sign-off (`docs/adr/0010-gate-d-signoff-adapter.md`). Replace the line above with `none` (no risks accepted) or the date the accepted risks will be re-reviewed.
 
 **Signed:** `name (product owner)` — `YYYY-MM-DD`
