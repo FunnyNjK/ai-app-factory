@@ -12,7 +12,9 @@
 
 ## Status
 
-Proposed
+Accepted (2026-06-01)
+
+Proposed 2026-05-31; amended and accepted 2026-06-01 after the product owner validated the inline Claude-style UI in a live run on the Ubuntu host (arrow-key picker, digit jump-select, cancel, post-action pause, and action output staying visible).
 
 ## Context
 
@@ -102,7 +104,7 @@ The baseline remains dependency-free — the nicer UI now needs nothing beyond b
 - [x] Non-interactive `--next` / `--status` implemented (now also accepting an optional project-path argument), covered by a dependency-free bash test suite under `scripts/test/` that CI runs in a `Script Tests` job.
 - [x] Documented the launcher in `docs/playbooks/running-a-project.md`; registered in `MANIFEST.md` and `scripts/validate-factory.mjs` `requiredFiles`.
 - [x] First interactive run on the Ubuntu host completed (2026-06-01). Findings: the `whiptail` fullscreen dialog hid action output; the product owner asked for a Claude Code look and feel. Both addressed by the inline-UI amendment above.
-- [ ] Promote this ADR to Accepted after the inline picker is validated in a live run on the Ubuntu host (arrow keys, digit jump, cancel, the post-action pause, and output staying visible).
+- [x] Promote this ADR to Accepted after the inline picker is validated in a live run on the Ubuntu host (arrow keys, digit jump, cancel, the post-action pause, and output staying visible). **Validated and accepted by the product owner 2026-06-01.**
 
 ## References
 
