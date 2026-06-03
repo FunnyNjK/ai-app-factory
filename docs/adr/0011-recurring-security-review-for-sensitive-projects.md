@@ -12,7 +12,14 @@
 
 ## Status
 
-Proposed
+Superseded by [ADR-0013](0013-configurable-roles-and-tools.md).
+
+The capability this ADR proposed — a recurring security review *during the build*, wired to the orchestrator's `FACTORY_STATUS=` / `TASKS.md` / `ESCALATIONS.md` action contract rather than emitting an orphaned report — shipped as ADR-0013's per-phase **security gate** (`scripts/orchestrator/security-phase-review.sh`). ADR-0013 went further than this ADR in one respect and chose differently in another:
+
+- **Further:** the security gate is one of two new blocking phase gates and runs after *every* phase for *every* project, driven by whichever tool the project maps to the `security` role in `.factory-roles.json`.
+- **Differently:** this ADR's distinctive proposal — gating the review on data classification so only Personal/Financial/Health/Secret projects pay for it — was *not* adopted. The product owner chose blocking-for-all (ADR-0013, "Advisory (non-blocking) gates" rejected). "Secure by default" outweighed the per-phase cost saving, and running security everywhere removes the misclassification risk this ADR itself flagged: a mislabeled sensitive project silently skipping the review.
+
+The `security-review.sh` adapter named in the Decision and Follow-up below was therefore never created; `security-phase-review.sh` is its realized form. The analysis below is retained as the historical record of why a recurring security lens was added to the build loop, and why it is not gated on data classification.
 
 ## Context
 
@@ -75,6 +82,8 @@ The six read-only review subagents remain **factory-level meta-tooling** for aud
 - Cadence (per-phase vs. pre-Gate-D-only) is intentionally left to the pilot rather than fixed now.
 
 ## Follow-up
+
+> **Obsolete — see Status.** These items described building a standalone `security-review.sh`. ADR-0013 instead shipped `security-phase-review.sh` (a blocking per-phase security gate for every project) and completed the equivalent wiring: `factory_next_action` dispatch in `scripts/orchestrator/lib.sh`, `MANIFEST.md` and `scripts/validate-factory.mjs` registration, and the env-var docs in `scripts/orchestrator/README.md`. No further action remains under this ADR.
 
 - Implement the `security-review.sh` adapter under `scripts/orchestrator/` and wire `factory_next_action` in `scripts/orchestrator/lib.sh` to dispatch it for in-scope projects.
 - Define the data-classification trigger (read the classification from `SECURITY.md` / `PROJECT.md`); default to running when absent.

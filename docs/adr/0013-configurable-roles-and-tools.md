@@ -4,7 +4,7 @@
 
 Accepted
 
-Supersedes [ADR-0006](0006-three-agent-signoff.md) (three-agent sign-off → five-agent + product-owner sign-off). Extends [ADR-0008](0008-per-slice-and-per-phase-gating.md) (adds two post-phase gates), [ADR-0009](0009-autonomous-orchestrator.md) (tool-agnostic adapters), [ADR-0010](0010-gate-d-signoff-adapter.md) (Gate D ceremony grows to six parties), and [ADR-0012](0012-interactive-factory-tui.md) (the launcher gains tool detection and a role-configuration wizard).
+Supersedes [ADR-0006](0006-three-agent-signoff.md) (three-agent sign-off → five-agent + product-owner sign-off) and [ADR-0011](0011-recurring-security-review-for-sensitive-projects.md) (its per-phase **security gate** realizes 0011's recurring-security-review intent, wired for action, for *every* project — so 0011's data-classification gate was dropped in favor of "secure by default"). Extends [ADR-0008](0008-per-slice-and-per-phase-gating.md) (adds two post-phase gates), [ADR-0009](0009-autonomous-orchestrator.md) (tool-agnostic adapters), [ADR-0010](0010-gate-d-signoff-adapter.md) (Gate D ceremony grows to six parties), and [ADR-0012](0012-interactive-factory-tui.md) (the launcher gains tool detection and a role-configuration wizard).
 
 ## Context
 

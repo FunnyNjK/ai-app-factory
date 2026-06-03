@@ -107,7 +107,7 @@ while true; do
       SIGNOFF_STATE=$(factory_signoff_state SIGNOFF.md)
       case "$SIGNOFF_STATE" in
         complete)
-          log "Gate D: all four sign-offs present in SIGNOFF.md. Project is release-ready."
+          log "Gate D: all six sign-offs present in SIGNOFF.md. Project is release-ready."
           if ! factory_advance_main "$ORCH_LOG_DIR"; then
             err "halt: could not fast-forward main after the final sign-off (see ESCALATIONS.md)."
             exit 2
@@ -115,7 +115,7 @@ while true; do
           exit 0
           ;;
         agents-signed)
-          log "Gate D: three agent sign-offs complete; product-owner sign-off required."
+          log "Gate D: five agent sign-offs complete; product-owner sign-off required."
           log "Complete the product-owner section in SIGNOFF.md (see ESCALATIONS.md), then re-run."
           exit 2
           ;;

@@ -196,9 +196,9 @@ The starter folder structure copied into a new project folder by the new-project
 | `docs/adr/0008-per-slice-and-per-phase-gating.md` | Per-slice (Cursor↔Codex) and per-phase (Codex→Claude) gating model with budget caps and ESCALATIONS.md. |
 | `docs/adr/0009-autonomous-orchestrator.md` | Bash orchestrator design — per-role adapters, shared safety lib, status-line contract, budget enforcement. |
 | `docs/adr/0010-gate-d-signoff-adapter.md` | Gate D sign-off adapter — three agent sub-sessions fill SIGNOFF.md; product-owner sign-off escalated to a human. |
-| `docs/adr/0011-recurring-security-review-for-sensitive-projects.md` | Proposed — a data-classification-gated security-review step in the gating loop for sensitive-data projects. |
-| `docs/adr/0012-interactive-factory-tui.md` | Proposed — a thin, context-aware bash TUI launcher wrapping scaffold and the build loop. |
-| `docs/adr/0013-configurable-roles-and-tools.md` | Five per-app roles, each mapped to a tool (claude/cursor/codex/gemini) in .factory-roles.json; per-phase security + code-review gates; six-party Gate D. Supersedes ADR-0006. |
+| `docs/adr/0011-recurring-security-review-for-sensitive-projects.md` | Superseded by ADR-0013 — its per-phase security gate (`scripts/orchestrator/security-phase-review.sh`) realizes the recurring-security-review intent for every project, so the proposed data-classification gate was dropped. |
+| `docs/adr/0012-interactive-factory-tui.md` | Accepted — a thin, context-aware bash TUI launcher (inline Claude Code-style UI) wrapping scaffold and the build loop. |
+| `docs/adr/0013-configurable-roles-and-tools.md` | Five per-app roles, each mapped to a tool (claude/cursor/codex/gemini) in .factory-roles.json; per-phase security + code-review gates; six-party Gate D. Supersedes ADR-0006 and ADR-0011. |
 
 ## Playbooks
 
