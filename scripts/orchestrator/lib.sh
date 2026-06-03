@@ -1530,6 +1530,12 @@ factory_tool_invoke() {
   local rc=0
   case "$tool" in
     claude)
+      # GOTCHA: claude rejects --dangerously-skip-permissions when it runs as
+      # root (uid 0) and exits without doing any work. Run the orchestrator as a
+      # non-root user (or a container with a non-root remoteUser) — most likely
+      # to bite on a Linux/CI validation host. Override the flag set via
+      # RUN_PHASE_CLAUDE_FLAGS if a future CLI changes this contract.
+      # Verified against https://docs.claude.com/en/docs/claude-code/cli-reference (2026-06).
       local flags
       read -r -a flags <<<"${RUN_PHASE_CLAUDE_FLAGS:---dangerously-skip-permissions}"
       [ -n "${RUN_PHASE_CLAUDE_MODEL:-}" ] && flags+=(--model "$RUN_PHASE_CLAUDE_MODEL")
