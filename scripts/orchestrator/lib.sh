@@ -44,11 +44,41 @@ rpl_init_log_dir() {
 }
 
 # ---------------------------------------------------------------------------
+# factory_load_settings — load persisted per-project settings from
+# ./.factory-settings (the same file scripts/factory.sh writes) into the
+# environment. This lets a direct `orchestrate.sh` or single-adapter run honor
+# the operator's saved push / Codex-sandbox choices instead of forcing them to
+# re-export the env vars each session. Only a fixed allowlist of keys is read,
+# and an explicitly-set environment variable WINS over the file — the file is a
+# persisted default, not an override. Idempotent and a no-op when absent.
+# Arg: $1 settings file (default ./.factory-settings)
+# ---------------------------------------------------------------------------
+factory_load_settings() {
+  local file="${1:-.factory-settings}"
+  [ -f "$file" ] || return 0
+  local key val
+  while IFS='=' read -r key val; do
+    case "$key" in
+      RUN_PHASE_NO_PUSH|RUN_PHASE_CODEX_APPROVAL_FLAG) ;;
+      *) continue ;;
+    esac
+    [ -n "$val" ] || continue
+    # Explicit environment wins; the file only fills an unset/empty var.
+    if [ -z "${!key:-}" ]; then
+      export "$key=$val"
+      log "Loaded $key from $file"
+    fi
+  done <"$file"
+  return 0
+}
+
+# ---------------------------------------------------------------------------
 # rpl_preflight — keep unattended runs on a role-specific branch and refuse
 # to start with a dirty worktree.
 # ---------------------------------------------------------------------------
 rpl_preflight() {
   local expected branch target_branch status_output
+  factory_load_settings
   expected=$(printf '%s' "${TOOL_NAME:?TOOL_NAME must be set}" | tr '[:upper:]' '[:lower:]')
 
   if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -780,15 +810,47 @@ entry = (
     f"- Status: open\n"
 )
 
-# Insert under the "## Open" section, before the next "## " heading.
-open_re = re.compile(r"(^## Open\s*$)", re.MULTILINE)
+# Insert under the "## Open" section. Two things the naive
+# "insert before the next ## heading" approach got wrong:
+#   1. it left the "(No open escalations.)" placeholder in place, and
+#   2. it inserted below the "---" rule that separates Open from
+#      "## Resolved", orphaning the entry under the wrong section.
+# Drop the placeholder, and keep the new entry ABOVE any trailing rule.
+open_re = re.compile(r"^## Open\s*$", re.MULTILINE)
 m = open_re.search(text)
 if m:
     after_open = m.end()
-    # Find the next "## " heading after this point.
     next_h2 = re.search(r"^## ", text[after_open:], re.MULTILINE)
-    insert_at = after_open + (next_h2.start() if next_h2 else len(text) - after_open)
-    new_text = text[:insert_at].rstrip() + "\n" + entry + "\n" + text[insert_at:]
+    block_end = after_open + (next_h2.start() if next_h2 else len(text) - after_open)
+    open_block = text[after_open:block_end]
+    tail = text[block_end:]
+
+    # Remove the empty-state placeholder line, if present.
+    open_block = re.sub(
+        r"^[ \t]*\(No open escalations\.\)[ \t]*$", "", open_block, flags=re.MULTILINE
+    )
+
+    # Split off a trailing "---" rule so the new entry lands above it (the rule
+    # keeps separating Open from the next section). Reassemble with single blank
+    # lines so spacing stays clean regardless of the prior layout.
+    hr = re.search(r"^---[ \t]*$", open_block, re.MULTILINE)
+    existing = (open_block[:hr.start()] if hr else open_block).strip("\n")
+    entry_text = entry.strip("\n")
+
+    pieces = ["## Open"]
+    if existing:
+        pieces.append(existing)
+    pieces.append(entry_text)
+    if hr:
+        pieces.append("---")
+    new_block = "\n\n".join(pieces)
+
+    rest = tail.strip("\n")
+    new_text = text[:after_open].rstrip("\n").rsplit("## Open", 1)[0].rstrip("\n")
+    new_text = (new_text + "\n\n" if new_text else "") + new_block
+    if rest:
+        new_text += "\n\n" + rest
+    new_text = new_text.rstrip("\n") + "\n"
 else:
     # No "## Open" section found; append to end.
     new_text = text.rstrip() + "\n" + entry

@@ -62,6 +62,11 @@ cd "$PROJECT_PATH"
 [ -f TASKS.md ] || { err "error: no TASKS.md in $PROJECT_PATH (run /design first)"; exit 1; }
 [ -f ESCALATIONS.md ] || { err "error: no ESCALATIONS.md in $PROJECT_PATH"; exit 1; }
 
+# Load persisted per-project settings (push / Codex-sandbox choices) so a direct
+# orchestrate.sh run honors them without re-exporting env vars each session.
+# Explicit environment still wins; adapters inherit whatever we export here.
+factory_load_settings
+
 # Set up orchestrator-level log dir (separate from adapter logs).
 TOOL_NAME="Orchestrator"
 TOOL_LOG_PREFIX="orchestrate"
