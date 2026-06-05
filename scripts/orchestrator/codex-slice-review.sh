@@ -43,7 +43,7 @@ Steps:
 2. Find slice ${SLICE_ID} in TASKS.md. Confirm its Status is awaiting-review. If it is not, abort with status=error.
 3. Read the slice's acceptance criteria from ARCHITECTURE.md Work Breakdown and CURSOR_HANDOFF.md.
 4. Read the recent git diff for changes Cursor made to implement this slice (use \`git log --oneline -n 5\` and \`git diff HEAD~1\`).
-5. Execute the slice's acceptance criteria. Run any tests Cursor added; confirm they pass. Spot-check the code for the per-project-type checklist in factory AGENTS.md (security smoke, accessibility baseline as applicable, integration points, error handling).
+5. Review EXHAUSTIVELY in this one pass — do not stop at the first defect. First enumerate the complete acceptance-criteria set for this slice from ARCHITECTURE.md Work Breakdown, CURSOR_HANDOFF.md, API_SPEC.md, and TEST_PLAN.md (every status code, error envelope, validation rule, header, log field, and edge case the contract names). Then check EVERY item: run all tests Cursor added and confirm they pass, and verify each criterion that is not yet test-covered. Also apply the per-project-type checklist in factory AGENTS.md (security smoke, accessibility baseline as applicable, integration points, error handling). Collect ALL failures, missing tests, and contract gaps across the full criteria set BEFORE deciding — the per-task iteration cap is small, so filing gaps a few at a time across multiple review rounds is a failure mode. One thorough review that names every gap is the goal.
 6. Decide:
 
    (A) APPROVED — every acceptance criterion passes, tests pass, no significant defect:
@@ -53,7 +53,7 @@ Steps:
          FACTORY_STATUS={"role":"codex","action":"slice-review","slice":"${SLICE_ID}","status":"approved","details":"<one-line evidence summary>"}
 
    (B) SUB-TASKS NEEDED — one or more defects, missing tests, or contract gaps:
-       - Update TASKS.md: set slice ${SLICE_ID} Status to in-progress, append numbered sub-tasks to the slice's Sub-tasks line (use ${SLICE_ID}.a, ${SLICE_ID}.b, ...). Each sub-task must be specific (file/function/line) and testable.
+       - File EVERY gap you found in step 5 now, in this single review — do not defer some to a later round. Update TASKS.md: set slice ${SLICE_ID} Status to in-progress, append numbered sub-tasks to the slice's Sub-tasks line (use ${SLICE_ID}.a, ${SLICE_ID}.b, ...). Each sub-task must be specific (file/function/line) and testable.
        - Do NOT increment Iterations — the orchestrator handles that on the next cursor-slice run.
        - End with:
          Work completed: filed N sub-tasks for slice ${SLICE_ID}

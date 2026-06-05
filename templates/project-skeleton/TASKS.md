@@ -22,7 +22,7 @@
 
 | Cap | Value | Override here |
 |---|---|---|
-| Per-task iterations | 3 | <number-or-default> |
+| Per-task iterations | 5 | <number-or-default> |
 | Per-phase iterations | 2 | <number-or-default> |
 | Per-session token cap | 100,000 | <number-or-default> |
 | Per-project budget (USD) | 200 | <number-or-default> |
@@ -41,7 +41,7 @@ When a cap is hit, the agent writes to `ESCALATIONS.md` and marks the affected w
 - Status: `pending`
 - Owner: cursor
 - Acceptance criteria: see `ARCHITECTURE.md` Work Breakdown 1.1 (or `CURSOR_HANDOFF.md` slice 1.1)
-- Iterations: 0/3
+- Iterations: 0/5
 - Sub-tasks: none
 - Notes: -
 
@@ -50,7 +50,7 @@ When a cap is hit, the agent writes to `ESCALATIONS.md` and marks the affected w
 - Status: `pending`
 - Owner: cursor
 - Acceptance criteria: see `ARCHITECTURE.md` Work Breakdown 1.2
-- Iterations: 0/3
+- Iterations: 0/5
 - Sub-tasks: none
 - Notes: -
 
@@ -86,7 +86,7 @@ When a cap is hit, the agent writes to `ESCALATIONS.md` and marks the affected w
 - Status: `pending`
 - Owner: cursor
 - Acceptance criteria: see `ARCHITECTURE.md` Work Breakdown 2.1
-- Iterations: 0/3
+- Iterations: 0/5
 - Sub-tasks: none
 - Notes: -
 
@@ -122,7 +122,7 @@ When Codex finds bugs during slice review, append them under the slice as a numb
 
 - Status: `in-progress`
 - Owner: cursor
-- Iterations: 1/3
+- Iterations: 1/5
 - Sub-tasks:
   - N.M.a Fix the off-by-one error in pagination.
   - N.M.b Add server-side validation for the email field.

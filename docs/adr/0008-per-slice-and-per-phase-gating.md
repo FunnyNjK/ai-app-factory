@@ -67,7 +67,7 @@ These are factory defaults, configurable per project in the `TASKS.md` header:
 
 | Cap | Default | Rationale |
 |---|---|---|
-| Per-task iterations (Codex finds bugs → Cursor fixes) | 3 rounds | After three honest attempts, the slice is either mis-scoped or needs human judgment. |
+| Per-task iterations (Codex finds bugs → Cursor fixes) | 5 rounds | After five honest attempts, the slice is either mis-scoped or needs human judgment. Raised from 3 → 5 on 2026-06-05; see Amendment below. |
 | Per-phase iterations (Claude finds issues → Cursor fixes) | 2 rounds | Phase-level disagreement usually reveals an architecture question, not an implementation bug. |
 | Per-session token cap | 100,000 tokens | Configurable per tool; protects against unbounded context expansion. |
 | Per-project budget | $200 (soft) | Sized for small marketing-site and SaaS projects. Larger projects override this in the `TASKS.md` header. |
@@ -107,6 +107,21 @@ The product owner reviews `ESCALATIONS.md` **after** the most recent Claude phas
 
 - The slice/phase shape itself does not change; only the *gating between them* does. Existing handoff and architecture templates work unchanged.
 - Stage 1 relies on the product owner as the orchestrator (manually moving work between Cursor and Codex sessions). Stage 2 will replace that with a script (separate ADR).
+
+## Amendment (2026-06-05): per-task cap 3 → 5, and exhaustive single-pass slice review
+
+The first end-to-end orchestrator run (the `simplytammi` marketing-site pilot, ADR-0009 validation) exercised the per-task cap on a real multi-criteria slice and confirmed the prediction in this ADR's own Negative consequences ("the cap numbers are likely to change once the first two test projects run"). Two findings:
+
+1. **The cap of 3 was too tight for slices with many discrete acceptance criteria.** On slice 2.2 (`POST /api/contact` — validation, honeypot, rate-limit, error envelope), the Tester (Codex) surfaced legitimate, in-scope gaps in *successive* review rounds — 2.2.a–d in round one, then 2.2.e–f (error-envelope test coverage required by `API_SPEC.md`) in round two — exhausting the 3-round cap on sound work rather than on a mis-scope. The escalation was correct mechanically but pointed at a too-small cap, not a too-broad slice.
+
+2. **The root cause was incremental review, not the cap.** Because the Tester filed gaps a batch at a time instead of enumerating the full acceptance-criteria set in one pass, each pass consumed one of the limited iterations.
+
+**Decisions:**
+
+- **Per-task iteration cap default raised 3 → 5.** Five gives headroom for a couple of legitimate fix rounds while still flagging genuinely mis-scoped slices. The cap remains a *mis-scope detector*, not a throughput knob, so it is not raised further — a higher value would mask mis-scoping and waste tokens looping. The per-phase cap is unchanged at 2.
+- **Slice review must be exhaustive in a single pass.** `scripts/orchestrator/codex-slice-review.sh` now instructs the Tester to evaluate *every* acceptance criterion and file *all* defects and missing tests as sub-tasks in one review, rather than stopping at the first batch. This is the structural fix; the cap raise is the safety margin.
+
+The cap is read from the `TASKS.md` "Per-task iterations" budget header (single source of truth; `factory_increment_iterations` derives each slice's `N/M` denominator from it), so existing projects pick up the new default by editing that one header row (or via `refresh-project`).
 
 ## Follow-up
 

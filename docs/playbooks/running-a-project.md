@@ -239,7 +239,7 @@ For a real production project where every slice's behavior matters, prefer Optio
 
 ### A slice keeps coming back with sub-tasks
 
-After 2 Codex review rounds, the iteration counter is at 2/3. One more round of `sub-tasks-filed` will push to 3/3 and trigger an `iteration-cap-hit` escalation.
+After 4 Codex review rounds, the iteration counter is at 4/5 (the default per-task cap is 5; see `docs/adr/0008` Amendment 2026-06-05). One more round of `sub-tasks-filed` will push to 5/5 and trigger an `iteration-cap-hit` escalation. Because slice review is expected to be exhaustive in a single pass, a healthy slice should converge well before this — repeatedly hitting the cap is itself the mis-scope signal.
 
 If you see this approaching:
 
