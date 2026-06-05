@@ -123,6 +123,8 @@ The first end-to-end orchestrator run (the `simplytammi` marketing-site pilot, A
 
 The cap is read from the `TASKS.md` "Per-task iterations" budget header (single source of truth; `factory_increment_iterations` derives each slice's `N/M` denominator from it), so existing projects pick up the new default by editing that one header row (or via `refresh-project`).
 
+**Update (2026-06-05, later the same day):** running the pilot one slice further showed decision 2 (the "exhaustive single-pass" instruction) is **necessary but not sufficient on its own** — the reviewer kept dribbling findings because the acceptance criteria are scattered across documents with nothing to enumerate against. The instruction is retained but re-grounded against an explicit per-slice acceptance checklist in [ADR-0014](0014-per-slice-acceptance-checklist-review-anchor.md). The cap raise in decision 1 stands as a safety margin.
+
 ## Follow-up
 
 - Add `templates/project-skeleton/TASKS.md` — per-project task tracker.
