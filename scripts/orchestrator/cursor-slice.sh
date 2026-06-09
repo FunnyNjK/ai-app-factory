@@ -43,7 +43,7 @@ You are ${ROLE_NAME}, the Developer for this AI App Factory project. Your task t
 Steps:
 
 1. Read CLAUDE.md, .cursor/rules/developer.mdc, ARCHITECTURE.md, CURSOR_HANDOFF.md, TASKS.md, and every docs/adr/*.md.
-2. Find slice ${SLICE_ID} in TASKS.md. Note its acceptance criteria (in ARCHITECTURE.md Work Breakdown and CURSOR_HANDOFF.md) and any Sub-tasks listed from prior Codex review.
+2. Find slice ${SLICE_ID} in TASKS.md. Note its acceptance criteria (in ARCHITECTURE.md Work Breakdown and CURSOR_HANDOFF.md) and any Sub-tasks listed from prior Codex review. If the slice's acceptance line names a consolidated per-slice acceptance checklist with stable item ids (ADR-0014 — e.g. 2.4-AC-01, ...), implement to satisfy EVERY item on that checklist — it is the exact list the reviewer will verdict item-by-item, so treat each item as a requirement, including the test evidence it names.
 3. Update TASKS.md: set slice ${SLICE_ID} Status to in-progress. Leave the Owner field exactly as the architect set it — Owner is the slice's work type (cursor = coding), not a runtime marker, and the orchestrator owns routing. Do not change it.
 4. If sub-tasks exist for this slice: fix only those sub-tasks (focused changes, no unrelated refactors). Otherwise: implement the slice end-to-end per CURSOR_HANDOFF.md (UI, API, integration, tests, docs as scoped).
 5. Run local tests and confirm they pass. If tests do not exist yet for what you built, add them per standards/testing-standards.md.

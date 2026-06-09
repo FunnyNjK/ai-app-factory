@@ -43,12 +43,12 @@ Steps:
 
 1. Read AGENTS.md, ARCHITECTURE.md, CODEX_HANDOFF.md if present, TASKS.md, and TEST_PLAN.md if it exists.
 2. Find slice ${SLICE_ID} in TASKS.md. Set its Status to in-progress. Leave the Owner field exactly as the architect set it (codex) — do not change it; the orchestrator owns routing.
-3. Read the acceptance criteria for the slice from ARCHITECTURE.md Work Breakdown and the handoff.
-4. Do the verification the slice specifies: run the commands, scripts, or checks needed to prove the acceptance criteria, and add a small verification script or report if the slice calls for one. Inspect source files only — do not grep, cat, or read files inside node_modules/, .factory-logs/, dist/, or build/.
+3. Read the acceptance criteria for the slice. If the slice's TASKS.md acceptance line (or the ARCHITECTURE.md section it points to) names a consolidated per-slice acceptance checklist with stable item ids (ADR-0014 — e.g. 3.5-AC-01, 3.5-AC-02, ...), THAT checklist is the authoritative gate; load it and use its items verbatim. Otherwise read the criteria from ARCHITECTURE.md Work Breakdown and the handoff.
+4. Do the verification the slice specifies: run the commands, scripts, or checks needed to prove the acceptance criteria, and add a small verification script or report if the slice calls for one. When a consolidated checklist exists, work through it item by item and assign EVERY item exactly one verdict: covered (name the evidence — passing test, command output, measured score), gap, or n/a (one-line reason). Because a verification slice has no separate implementer and no second reviewer, your per-item verdict list IS the quality gate — do not approve on a partial pass. Inspect source files only — do not grep, cat, or read files inside node_modules/, .factory-logs/, dist/, or build/.
 5. Decide:
 
-   (A) VERIFIED — every acceptance criterion is demonstrably met:
-       - Set slice ${SLICE_ID} Status to approved in TASKS.md.
+   (A) VERIFIED — every checklist item is covered or n/a (or, absent a checklist, every acceptance criterion is demonstrably met):
+       - Set slice ${SLICE_ID} Status to approved in TASKS.md, and append a compact per-item verdict line to the slice's Notes (e.g. Verdicts: AC-01 covered (axe e2e, 0 violations), AC-02 covered (Lighthouse 97), AC-03 n/a (...)).
        - End with:
          Work completed: verified slice ${SLICE_ID}
          FACTORY_STATUS={"role":"codex","action":"slice-verify","slice":"${SLICE_ID}","status":"verification-complete","details":"<one-line evidence summary>"}
