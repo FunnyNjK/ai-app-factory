@@ -2,7 +2,9 @@
 
 ## Status
 
-Proposed
+Accepted
+
+Accepted 2026-06-08 after the failure mode recurred a third time: `simplytammi` slice 2.3 hit the per-task iteration cap (ESC-004) via the same incremental-review dribble this ADR describes, confirming that the cap raise and the "exhaustive single-pass" instruction are not sufficient on their own. `scripts/orchestrator/codex-slice-review.sh` now implements the per-item verdict mechanism (decision 2): when a slice's acceptance line names a consolidated checklist, the reviewer loads it and reports `covered`/`gap`/`n/a` for every item, approving only when all are `covered` or `n/a`; absent a checklist it falls back to enumerating the scattered docs as before.
 
 Extends [ADR-0008](0008-per-slice-and-per-phase-gating.md) (sharpens what "acceptance criteria" a slice review verifies against) and [ADR-0009](0009-autonomous-orchestrator.md) (changes the slice-review adapter's contract). **Refines the second decision of ADR-0008's Amendment (2026-06-05).** That amendment made two changes after the first orchestrator pilot: (a) raised the per-task iteration cap 3 → 5, and (b) instructed the Tester to "review exhaustively in a single pass." The same pilot, run one slice further, showed that **(b) alone does not work** — see Context. This ADR keeps the exhaustive-pass instruction but re-grounds it: the reviewer enumerates against an explicit, authored checklist instead of re-deriving the criteria set each round. The cap raise (a) stands as a safety margin.
 
