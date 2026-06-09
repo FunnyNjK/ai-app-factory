@@ -61,7 +61,7 @@ Steps:
 
    (B) PHASE-LEVEL SUB-TASKS NEEDED — integration or intent issues exist:
        - Update TASKS.md: set Phase ${PHASE_ID} review Status to in-progress, append numbered phase-level sub-tasks under that entry (use ${PHASE_ID}.review.a, ${PHASE_ID}.review.b, ...). Each sub-task must reference the affected slice(s) and be specific and testable.
-       - For each phase-level sub-task that requires Cursor work, also route the affected slice back to in-progress by editing its Status line in TASKS.md.
+       - For each phase-level sub-task that requires Cursor work, also route the affected slice back to in-progress by editing its Status line in TASKS.md, AND reset that slice's Iterations counter to 0/<cap> (read the cap from the TASKS.md Budget caps table). Phase-hardening is a new bounded work item; the old counter recorded the original slice loop, and a previously exhausted counter would otherwise halt the orchestrator before Cursor can start the hardening work.
        - Do NOT increment the phase-review Iterations counter — the orchestrator handles that.
        - End with:
          Work completed: filed N phase-level sub-tasks for Phase ${PHASE_ID}

@@ -67,8 +67,30 @@ The slice was finished only by the architect stepping outside the autonomous loo
 - Update `scripts/orchestrator/codex-slice-review.sh` to load the checklist and require a per-item verdict before approval; update the `FACTORY_STATUS` contract if a structured per-item result is wanted.
 - Update the `/design`, `/handoff-cursor`, `/handoff-codex` skills and the project-skeleton templates to require a per-slice acceptance checklist.
 - Add a back-reference from ADR-0008's Amendment (2026-06-05) to this ADR.
-- Re-validate on `simplytammi` slice 2.5 (or the next project's first slice): confirm a single review pass with a per-item verdict, no dribble, no cap hit on sound work.
-- Restore the slice-2.2 carry-forward (a dedicated `500 INTERNAL_ERROR` unit test) during Phase 2 hardening — a concrete instance of a checklist item that fell through precisely because the review was not checklist-anchored.
+- ~~Re-validate on `simplytammi` slice 2.5 (or the next project's first slice).~~ Done 2026-06-08/09 on slices 2.4 and 2.5 — see Amendment below for results.
+- ~~Restore the slice-2.2 carry-forward (a dedicated `500 INTERNAL_ERROR` unit test) during Phase 2 hardening.~~ Done 2026-06-09, closed via Phase 2 review sub-task `2.review.a`.
+
+## Amendment (2026-06-09): validation results, verdict stability, and authoring guidance
+
+The mechanism was validated live on `simplytammi` slices 2.4 and 2.5 — the first slices reviewed under both a pre-authored checklist and the per-item verdict contract.
+
+### What the validation showed
+
+**Materially better, not yet single-pass.** Both slices converged in two review rounds, well inside the cap, with zero churn-type escalations; sub-tasks now cite checklist item ids (`2.4.d [2.4-AC-04] …`), so every filed gap is traceable to the contract. The escalations that did occur changed character: from "the process is stuck" to genuine architect decisions. Two residuals surfaced, each now addressed:
+
+1. **Verdict instability.** Slice 2.4's round-2 review re-litigated items it had effectively passed in round 1, demanding stricter ("exact") assertions on `2.4-AC-04/05/06`. The checklist anchored *what* to check but not *when a verdict becomes settled*. Fix (now in `codex-slice-review.sh`): the reviewer appends a compact per-item verdict line to the slice's Notes in `TASKS.md` each round; prior `covered`/`n/a` verdicts are settled and may be re-opened only if the relevant implementation changed or the prior verdict was factually wrong — stated explicitly in the new sub-task. Demanding-stricter-assertions belongs in the round where the item is first verdicted.
+2. **Reopen/counter collision.** When the Phase 2 review filed a hardening sub-task against already-approved slice 2.2 (iteration counter exhausted at 6/6 from its original loop), the orchestrator's pre-dispatch cap check halted with a spurious escalation (`simplytammi` ESC-006) — no mechanism ever resets a slice counter. Fix (now in `claude-phase-review.sh`): when a phase review routes an approved slice back to `in-progress`, it also resets that slice's Iterations counter to `0/<cap>`; phase-hardening is a new bounded work item, not a continuation of the original slice loop.
+
+**A new, acceptable failure mode: checklist defects.** With the checklist authoritative, an error in the checklist itself blocks the loop — `simplytammi` ESC-005 was exactly this (two authoring errors: a Phase-4-owned requirement imported into a Phase-2 slice, and an unverified vendor-API assumption — Postmark's `POSTMARK_API_TEST` token is rejected by `/email/withTemplate`). The trade is sound: a wrong checklist fails **loudly, once, with a precise complaint**, where un-anchored review failed slowly and expensively. But it makes checklist authoring the load-bearing element, hence:
+
+### Authoring guidance (normative)
+
+When the architect authors `X.Y-AC-*` checklists:
+
+1. **Author just-in-time, per phase** — immediately before the phase opens, not speculatively at design time. Later phases change shape; a stale checklist is a defect generator.
+2. **Verify vendor/external-API claims against primary documentation before encoding them in an item.** An AC that asserts how a third-party service behaves (test tokens, sandbox modes, endpoint restrictions) must be checked against the vendor's current docs, not memory (ESC-005 lesson).
+3. **Scope-check every item against the phase that owns the work.** If another phase's slice owns a requirement (e.g. production Key Vault wiring in Phase 4), the item must either be omitted or written as an explicit `N/A — deferred to <slice>` row so the reviewer does not re-litigate it.
+4. **Sweep `THREAT_MODEL.md` for slice-named mitigation claims** and fold each into the owning slice's checklist. A mitigation the threat model attributes to a slice but no checklist enumerates will fall between slice review and phase review (the `simplytammi` 2.review.b drift: a documented email-fallback mitigation that was never built and never gated).
 
 ## References
 
