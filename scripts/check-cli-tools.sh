@@ -118,6 +118,17 @@ fi
 
 # Supporting tools the orchestrator and adapters use.
 printf '\n[Supporting tools]\n'
+# bash >= 4 is required: the adapters build prompts with heredocs-in-$() that
+# bash 3.2 (macOS default) cannot parse. Entry points self-re-exec under a
+# modern bash if one exists (ADR-0015); warn here if none is reachable.
+if [ "${BASH_VERSINFO:-0}" -ge 4 ]; then
+  printf '  %-8s present (bash %s)\n' "bash" "${BASH_VERSION%%(*}"
+elif command -v bash >/dev/null 2>&1 && bash -c '[ "${BASH_VERSINFO:-0}" -ge 4 ]' 2>/dev/null; then
+  printf '  %-8s present (running shell is bash %s; a bash >= 4 is on PATH — adapters will re-exec into it)\n' "bash" "${BASH_VERSION%%(*}"
+else
+  printf '  %-8s TOO OLD (bash %s) and no bash >= 4 found — orchestrator will not run. Install one: brew install bash (macOS) / apt-get install bash.\n' "bash" "${BASH_VERSION%%(*}"
+  SUPPORT_MISSING=$((SUPPORT_MISSING + 1))
+fi
 for support in git python3 grep awk sed; do
   if command -v "$support" >/dev/null 2>&1; then
     printf '  %-8s present\n' "$support"

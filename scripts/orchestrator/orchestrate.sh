@@ -46,6 +46,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# Re-exec under bash >= 4 before parsing the prompt heredocs below (ADR-0015).
+# shellcheck source=require-bash4.sh
+. "$SCRIPT_DIR/require-bash4.sh"
 # shellcheck source=lib.sh
 . "$SCRIPT_DIR/lib.sh"
 

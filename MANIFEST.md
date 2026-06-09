@@ -58,6 +58,7 @@ Bash scripts that autonomously drive the per-slice and per-phase gating loop def
 | `scripts/orchestrator/security-phase-review.sh` | Adapter — post-phase security gate via the security role's tool (ADR-0013). Approves in place or escalates; blocks the phase. |
 | `scripts/orchestrator/codereview-phase-review.sh` | Adapter — post-phase code-review & refactoring gate via the code-review role's tool (ADR-0013). Approves in place or escalates; blocks the phase. |
 | `scripts/orchestrator/gate-d-signoff.sh` | Adapter — Gate D six-party sign-off ceremony (five agent sub-sessions fill SIGNOFF.md; product-owner sign-off escalated). See ADR-0013. |
+| `scripts/orchestrator/require-bash4.sh` | Sourced first by every entry point; re-execs the script under bash ≥ 4 if launched under an older bash (e.g. macOS's stock 3.2). See ADR-0015. |
 | `scripts/orchestrator/lib.sh` | Shared safety + task-tracker helpers, the tool registry, and per-project role config (ADR-0013). Sourced by every script. |
 | `scripts/orchestrator/README.md` | Usage, env vars, status-line contract, debugging. |
 | `docs/research/headless-cli/run-phase.sh` | Reference — original Claude harness from prior project. |

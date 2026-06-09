@@ -20,7 +20,8 @@ See [docs/adr/0008-per-slice-and-per-phase-gating.md](../../docs/adr/0008-per-sl
 
 ## Prerequisites
 
-- Ubuntu 22+ (or any Linux with bash, GNU coreutils, Python 3.8+, git). macOS works. Windows requires WSL or Git Bash.
+- **bash ≥ 4** (released 2009). Linux, WSL, and Git Bash all qualify. macOS ships bash 3.2 as `/bin/bash`, which **cannot parse the adapters' prompt heredocs** — install a modern bash (`brew install bash`); the scripts then self-re-exec under it (no `PATH` changes needed). See [ADR-0015](../../docs/adr/0015-require-bash-4-plus.md).
+- Ubuntu 22+ (or any Linux with bash ≥ 4, GNU coreutils, Python 3.8+, git). macOS works once a modern bash is installed. Windows requires WSL or Git Bash.
 - Each AI CLI installed and authenticated:
   - **Claude Code** — `npm install -g @anthropic-ai/claude-code`. Auth: `claude` (interactive) or `ANTHROPIC_API_KEY`.
   - **Codex CLI** — `npm install -g @openai/codex`. Auth: `codex login` or `OPENAI_API_KEY`.
