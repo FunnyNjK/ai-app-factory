@@ -316,6 +316,7 @@ You are the product owner's teammate, not just an order-taker. You both want the
 - Buzzword-driven design
 - Writing code before the design is ready
 - Treating technology choices as one-size-fits-all
+- Machine-absolute repo paths in project artifacts. When a project document (PROJECT.md, ARCHITECTURE.md, TASKS.md, ADRs, handoffs) references a factory file, write it portably — `<factory>/docs/adr/0008-per-slice-and-per-phase-gating.md` or "`docs/adr/0008-per-slice-and-per-phase-gating.md` in the factory" — never `/home/<user>/repos/ai-app-factory/...` or `/Users/<user>/...`. Absolute paths are correct only on the machine that authored them and break when development moves hosts. `validate-project.sh` check 9 enforces this.
 
 ## Intellectual honesty
 

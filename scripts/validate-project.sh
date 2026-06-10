@@ -21,6 +21,9 @@
 #      its required fields; every project ADR has its required sections.
 #   8. Role configuration (.factory-roles.json, ADR-0013): valid JSON, known
 #      role keys, supported tools, non-empty display names.
+#   9. No machine-absolute repo paths (/home/<user>/repos/..., /Users/<user>/
+#      repos/...) in tracked markdown — factory references must be portable
+#      so the project survives moving between hosts.
 #
 # Usage:
 #   scripts/validate-project.sh [project-path]
@@ -595,6 +598,28 @@ PYEOF
   cat "$ROLES_TMP"
   rm -f "$ROLES_TMP"
   ERRORS=$((ERRORS + roles_rc))
+fi
+
+# --- 9. Machine-absolute repo paths ----------------------------------------
+# Project documents must reference the factory (and any sibling repo) portably.
+# A path like /home/<user>/repos/ai-app-factory/... or /Users/<user>/repos/...
+# is correct only on the machine that authored it and breaks the moment the
+# project moves hosts (Ubuntu -> macOS -> Windows). Write factory references as
+# "<factory>/docs/adr/..." or "docs/adr/... in the factory" instead.
+# The pattern is deliberately scoped to "<home>/<user>/repos/" so legitimate
+# absolute paths (e.g. Azure's /home/site/wwwroot) are not flagged.
+
+printf '\n[9] Machine-absolute repo paths in tracked markdown\n'
+
+ABS_PATH_HITS=$(git ls-files '*.md' 2>/dev/null \
+  | xargs grep -lnE '(/home|/Users)/[A-Za-z0-9._-]+/repos/' 2>/dev/null || true)
+if [ -z "$ABS_PATH_HITS" ]; then
+  pass "no machine-absolute repo paths in tracked markdown"
+else
+  for f in $ABS_PATH_HITS; do
+    fail "machine-absolute repo path in $f (write factory references portably, e.g. '<factory>/docs/adr/...')"
+    grep -nE '(/home|/Users)/[A-Za-z0-9._-]+/repos/' "$f" | head -3 | sed 's/^/      /'
+  done
 fi
 
 # --- Summary --------------------------------------------------------------
